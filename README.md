@@ -17,6 +17,8 @@
 
 ## Architecture
 
+![Editor _ Mermaid Chart-2025-06-11-124646](https://github.com/user-attachments/assets/a2668cf6-99be-4967-8cd7-5e7acd862aa9)
+
 ### Proof Portal (React + Tailwind, hosted on Vercel)
 
 - User-facing client app to generate the proof
@@ -70,4 +72,4 @@ This proves the user owns a wallet address that was verified by Coinbase.
 | End-to-end flow (dApp → portal → dApp) | 🔜 Coming Soon
 | Replay protection (nonce, timestamp, origin) | 🔜 Coming Soon
 | Vercel deployment | 🔜 Coming Soon  
-| Demo dApp integration | 🔄 In Progress  
+| Demo dApp integration | 🔜 Coming Soon  
