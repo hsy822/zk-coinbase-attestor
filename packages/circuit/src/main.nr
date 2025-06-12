@@ -1,7 +1,8 @@
+use std::hash::keccak256;
 use std::ecdsa_secp256k1::verify_signature;
 
 fn main(
-    tx_hash: [u8; 32],
+    message: [u8; 64],
     coinbase_sig: [u8; 64],
     user_pubkey_x: [u8; 32],
     user_pubkey_y: [u8; 32],
@@ -10,6 +11,8 @@ fn main(
     coinbase_pubkey_x: pub [u8; 32],
     coinbase_pubkey_y: pub [u8; 32],
 ) {
+    let tx_hash = keccak256(message, 64);
+
     let coinbase_valid = verify_signature(
         coinbase_pubkey_x,
         coinbase_pubkey_y,

@@ -12,6 +12,7 @@
 - All proof generation happens client-side
 - The dApp only receives a yes/no result
 - No blockchain transactions required (off-chain verification)
+- Trust is anchored in a verifiable **Portal signature**
 
 ---
 
@@ -21,10 +22,24 @@
 
 ### Proof Portal (React + Tailwind, hosted on Vercel)
 
-- User-facing client app to generate the proof
-- Connects wallet and queries **KYC attestation** from **EAS**
-- Constructs proof input and runs Noir circuit in-browser
-- Sends the proof securely to the opener via `postMessage`
+- User-facing client app to generate proofs
+- Connects wallet and fetches **KYC attestation tx** via EAS + Infura
+- Verifies tx came from Coinbase and matches KYC schema
+- Sends **attestation digest** to Portal server
+- Receives **Portal's signature** over the digest
+- Generates ZK proof (in-browser via Noir) using:
+  - Portal signature
+  - User signature
+  - Attestation calldata
+- Returns proof securely to dApp via `postMessage`
+
+### Portal Server (Trusted Signer API)
+
+- Signs attestation calldata digests only if:
+  - tx is confirmed to be sent by Coinbase
+  - calldata structure matches expected `attestAccount(...)`
+- Never sees user wallet or address
+- Exposes minimal signing API for digest-only inputs
 
 ### SDK
 
@@ -32,32 +47,35 @@
 - Launches Proof Portal via `window.open`
 - Listens for proof response via `postMessage`
 - Verifies:
-  - zk-proof validity
-  - origin domain
-  - timestamp freshness
-  - one-time nonce
+  - ZK proof validity
+  - Portal signature
+  - Nonce, origin, timestamp
 
 ### dApp
 
 - Calls SDK to request proof
-- Receives boolean result only (no address or signature data)
-- Decides whether to grant access or benefits based on result
+- Receives only `true/false` result
+- Decides access or benefits accordingly
 
 ---
 
 ## What the Circuit Proves
 
-The Noir circuit confirms:
+The Noir circuit proves:
 
-1. The **user controls a wallet** that signed a specific `tx_hash`
-2. The same `tx_hash` was **signed by Coinbase** (EAS attestation)
+1. The user signed a message (attestation calldata)
+2. The same message was previously **signed by a trusted Portal signer**
+3. The message structure matches a valid Coinbase KYC attestation
+
+This implies:
+- The user owns the attested address (via signature)
+- The tx was indeed a Coinbase KYC attestation (via Portal signer)
 
 ### Inputs:
-- `tx_hash`: the attestation hash (e.g., issued on-chain by Coinbase)
-- `coinbase_sig`: Coinbase's signature on the attestation (public)
-- `user_sig`: User's signature on the same hash (private)
-
-This proves the user owns a wallet address that was verified by Coinbase.
+- `calldata`: calldata from the KYC tx
+- `digest`: `keccak256(calldata)`
+- `portal_sig`: Portal’s ECDSA signature over `digest` (public input)
+- `user_sig`: User’s ECDSA signature over `digest` (private input)
 
 ---
 
