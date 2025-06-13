@@ -2,7 +2,7 @@ use dep::keccak256::keccak256;
 use std::ecdsa_secp256k1::verify_signature;
 
 fn main(
-    calldata: [u8; 64],               // attestation calldata
+    calldata: [u8; 36],               // attestation calldata
     user_sig: [u8; 64],               // user's signature over digest
     coinbase_sig: [u8; 64],           // signature from Coinbase attestor over digest
 
@@ -13,7 +13,7 @@ fn main(
     coinbase_pubkey_y: pub [u8; 32],
 ) {
     // Step 1: compute digest
-    let digest = keccak256(calldata, 64);
+    let digest = keccak256(calldata, 36);
 
     // Step 2: verify digest was signed by Coinbase attestor
     let verified_cb = verify_signature(
