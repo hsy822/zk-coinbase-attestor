@@ -33,9 +33,9 @@ fn main(
     );
     assert(verified_user);
 
-    // Step 4: enforce function selector == `attestAccount(address)` -> 0x13e82e9d
-    assert(calldata[0] == 0x13);
-    assert(calldata[1] == 0xe8);
-    assert(calldata[2] == 0x2e);
-    assert(calldata[3] == 0x9d);
+    // Step 4: enforce function selector == `attestAccount(address)` -> 0x56feed5e
+    assert(calldata[0] == 0x56);
+    assert(calldata[1] == 0xfe);
+    assert(calldata[2] == 0xed);
+    assert(calldata[3] == 0x5e);
 }
