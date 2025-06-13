@@ -1,180 +1,282 @@
 "use client";
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
+import { Noir } from "@noir-lang/noir_js";
+import { UltraHonkBackend } from "@aztec/bb.js";
+import { Loader2, CheckCircle, ListTree } from "lucide-react";
 
-export default function Home() {
-  const [address, setAddress] = useState("");
-  const [attestations, setAttestations] = useState<any[]>([]);
-  const [txData, setTxData] = useState<any | null>(null);
+const STEPS = [
+  { action: "Connecting wallet", done: "Wallet connected" },
+  { action: "Fetching KYC attestation", done: "KYC attestation fetched" },
+  { action: "Extracting calldata", done: "Calldata extracted" },
+  { action: "Verifying Coinbase signature", done: "Signature verified" },
+  { action: "Signing message", done: "Message signed" },
+  { action: "Generating ZK proof", done: "Proof generated" },
+];
+
+export default function ProofPortal() {
+  const [loading, setLoading] = useState(false);
+  const [currentStep, setCurrentStep] = useState<number | null>(null);
+  const [completedSteps, setCompletedSteps] = useState<number[]>([]);
+  const [logs, setLogs] = useState<string[]>([]);
+  const [error, setError] = useState("");
+  const [proofGenerating, setProofGenerating] = useState(false);
+  const [proofElapsed, setProofElapsed] = useState(0);
 
   useEffect(() => {
-    if (!address) return;
-    fetchAttestations(address).then(setAttestations);
-  }, [address]);
-
-  useEffect(() => {
-    if (!attestations.length) return;
-
-    const fetchTx = async () => {
-      const txid = attestations[0].txid;
-      if (!txid) return;
-
-      const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_BASE_RPC_URL);
-      try {
-        const tx = await provider.getTransaction(txid);
-        console.log("Fetched transaction:", tx);
-        if (!tx) {
-          console.warn("Transaction not found for txid:", txid);
-          return;
-        }
-        setTxData({
-          from: tx.from,
-          to: tx.to,
-          value: tx.value.toString(),
-          data: tx.data,
-          hash: tx.hash,
-        });
-      } catch (e) {
-        console.error("Failed to fetch tx from Infura:", e);
-      }
-    };
-
-    fetchTx();
-  }, [attestations]);
-
-  const connectWallet = async () => {
-    if (typeof (window as any).ethereum === "undefined") {
-      alert("MetaMask not found");
-      return;
+    if (proofGenerating) {
+      const startTime = Date.now();
+      const interval = setInterval(() => {
+        setProofElapsed(Math.floor((Date.now() - startTime) / 1000));
+      }, 1000);
+      return () => clearInterval(interval);
     }
-  
-    try {
-      const [addr] = await (window as any).ethereum.request({
-        method: "eth_requestAccounts",
-      });
-  
-      const checksummed = ethers.getAddress(addr);
-      setAddress(checksummed);
-    } catch (err) {
-      console.error("Wallet connection failed", err);
-      alert("Wallet connection failed");
-    }
-  };
+  }, [proofGenerating]);
 
-  const fetchAttestations = async (address: string) => {
-    const query = `
-      query GetAttestations($recipient: String!, $attester: String!, $schemaId: String!, $now: Int!) {
-        attestations(
-          where: {
-            recipient: { equals: $recipient }
-            schemaId: { equals: $schemaId }
-            attester: { equals: $attester }
-            revocationTime: { equals: 0 }
-            OR: [
-              { expirationTime: { equals: 0 } }
-              { expirationTime: { gt: $now } }
-            ]
-          }
-          orderBy: { time: desc }
-          take: 10
-        ) {
-          id
-          txid
-          attester
-          recipient
-          refUID
-          revocable
-          revocationTime
-          expirationTime
-          data
-          schema {
-            id
-          }
-        }
-      }
-    `;
+  const logStep = (msg: string) => setLogs((prev) => [...prev, msg]);
+  const markStepComplete = (i: number) =>
+    setCompletedSteps((prev) => [...prev, i]);
 
+  const handleProve = async () => {
     try {
-      const now = Math.floor(Date.now() / 1000);
-      const res = await fetch("https://base.easscan.org/graphql", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          query,
-          variables: { 
-            recipient: address,
-            attester: "0x357458739F90461b99789350868CD7CF330Dd7EE",
-            schemaId: "0xf8b05c79f090979bf4a80270aba232dff11a10d9ca55c4f88de95317970f0de9",
-            now },
-        }),
+      setLoading(true);
+      setCurrentStep(null);
+      setLogs([]);
+      setCompletedSteps([]);
+      setError("");
+
+      let attestation: any;
+      let tx: any;
+      let calldata: Uint8Array;
+      let digest: string;
+      let cbX: Uint8Array, cbY: Uint8Array;
+      let userX: Uint8Array, userY: Uint8Array, sigUser: ethers.Signature;
+
+      const step = async (i: number, fn: () => Promise<void>) => {
+        setCurrentStep(i);
+        logStep(STEPS[i].action + "...");
+        await fn();
+        markStepComplete(i);
+      };
+
+      await step(0, async () => {
+        const [addr]: string[] = await (window as any).ethereum.request({ method: "eth_requestAccounts" });
+        const user: string = ethers.getAddress(addr);
+        logStep(`Wallet: ${user}`);
       });
 
-      const json = await res.json();
-      if (json.errors) {
-        console.error("GraphQL Errors:", json.errors);
-        return [];
-      }
+      await step(1, async () => {
+        const [addr]: string[] = await (window as any).ethereum.request({ method: "eth_requestAccounts" });
+        const user: string = ethers.getAddress(addr);
+        attestation = await fetchKycAttestation(user);
+        if (!attestation) throw new Error("No valid KYC attestation found.");
+        logStep("Attestation tx: " + attestation.txid);
+      });
 
-      console.log("GraphQL Response:", json);
-      return json.data?.attestations || [];
-    } catch (err) {
-      console.error("Fetch error:", err);
-      return [];
+      await step(2, async () => {
+        tx = await fetchRawTx(attestation.txid);
+        let calldataHex: string = tx.input;
+        if (calldataHex.length < 74) calldataHex = calldataHex.padEnd(74, "0");
+        calldata = ethers.getBytes(calldataHex.slice(0, 74));
+        logStep("Extracted calldata (" + calldata.length + " bytes)");
+      });
+
+      await step(3, async () => {
+        digest = ethers.keccak256(calldata);
+        const sigCB = { r: tx.r, s: tx.s, v: parseInt(tx.v) };
+        const cbPubkeyHex = ethers.SigningKey.recoverPublicKey(digest, sigCB);
+        const cbPub = ethers.getBytes(cbPubkeyHex);
+        cbX = cbPub.slice(1, 33);
+        cbY = cbPub.slice(33);
+        logStep("Coinbase pubkey recovered");
+      });
+
+      await step(4, async () => {
+        const digestBytes: Uint8Array = ethers.getBytes(digest);
+        const signer = await new ethers.BrowserProvider((window as any).ethereum).getSigner();
+        const sigUserRaw: string = await signer.signMessage(digestBytes);
+        sigUser = ethers.Signature.from(sigUserRaw);
+        const userPubkeyHex: string = ethers.SigningKey.recoverPublicKey(digest, sigUser);
+        const userPub = ethers.getBytes(userPubkeyHex);
+        userX = userPub.slice(1, 33);
+        userY = userPub.slice(33);
+        logStep("User signature validated");
+      });
+
+      await step(5, async () => {
+        const circuitInput = {
+          calldata: Array.from(calldata),
+          user_sig: Array.from(new Uint8Array([...ethers.getBytes(sigUser.r), ...ethers.getBytes(sigUser.s)])),
+          coinbase_sig: Array.from(new Uint8Array([...ethers.getBytes(tx.r), ...ethers.getBytes(tx.s)])),
+          user_pubkey_x: Array.from(userX),
+          user_pubkey_y: Array.from(userY),
+          coinbase_pubkey_x: Array.from(cbX),
+          coinbase_pubkey_y: Array.from(cbY),
+        };
+        const CIRCUIT_URL = "https://raw.githubusercontent.com/hsy822/zk-coinbase-attestor/main/packages/circuit/target/zk_coinbase_attestor.json";
+        const metaRes = await fetch(CIRCUIT_URL);
+        const metadata = await metaRes.json();
+        const noir = new Noir(metadata);
+        const backend = new UltraHonkBackend(metadata.bytecode, { threads: 2 });
+        const { witness } = await noir.execute(circuitInput);
+
+        setProofGenerating(true);
+        setProofElapsed(0);
+        const start = Date.now();
+        const proof = await backend.generateProof(witness, { keccak: true });
+        backend.destroy();
+        const duration = (Date.now() - start) / 1000;
+        const proofHex = "0x" + Buffer.from(proof.proof).toString("hex");
+        setProofGenerating(false);
+        logStep(`✅ ZK Proof generated (${duration.toFixed(1)}s)`);
+      });
+
+      setCurrentStep(null);
+    } catch (err: any) {
+      setError(err.message || "Unknown error");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <main className="min-h-screen bg-zk-black text-white flex flex-col items-center justify-center p-8">
-      <div className="max-w-md w-full bg-zk-surface rounded-xl shadow-xl backdrop-blur-xs border border-white/10 p-6 space-y-6">
-        <h1 className="text-2xl font-semibold text-center">
-          🛡️ Coinbase KYC Proof Portal
-        </h1>
-        <p className="text-sm text-gray-400 text-center">
-          Prove you're KYC verified — without revealing your address.
-        </p>
-        <button
-          className="bg-coinbase-blue hover:bg-coinbase-blue/90 transition px-4 py-2 rounded text-white font-semibold w-full"
-          onClick={connectWallet}
-        >
-          Connect Wallet & Start
-        </button>
-
-        {address && (
-          <p className="text-xs text-center text-gray-300 break-all">
-            Connected Address: <br />
-            <code>{address}</code>
-          </p>
-        )}
-
-        {attestations.length > 0 && (
-          <div className="mt-6 text-sm text-left space-y-2">
-            <h3 className="font-semibold text-lg text-center">🧾 Found Attestations</h3>
-            {attestations.map((att: any) => (
-              <div
-                key={att.id}
-                className="border border-white/10 rounded-lg p-3 bg-white/5 break-words"
-              >
-                <div><strong>Attester:</strong> {att.attester}</div>
-                <div><strong>UID:</strong> {att.id}</div>
-                <div><strong>Data:</strong> {att.data}</div>
-                <div><strong>TxHash:</strong> {att.txid}</div>
-              </div>
-            ))}
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white text-gray-800 font-sans p-8">
+      <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-white border border-gray-200 rounded-xl shadow-md p-6 space-y-5">
+          <h1 className="text-xl font-bold text-center">
+            Prove your Coinbase KYC — privately, directly from your browser.
+          </h1>
+          <div className="flex items-center gap-2 text-blue-600 font-semibold text-sm">
+            <ListTree className="w-4 h-4" />
+            Process
           </div>
-        )}
 
-        {txData && (
-          <div className="mt-6 text-sm bg-white/10 p-3 rounded text-white space-y-1">
-            <h4 className="font-semibold mb-2 text-center">📦 Transaction Details</h4>
-            <div><strong>From:</strong> {txData.from}</div>
-            <div><strong>To:</strong> {txData.to}</div>
-            <div><strong>Value:</strong> {txData.value}</div>
-            <div><strong>Hash:</strong> {txData.hash}</div>
+          <ul className="space-y-2 text-sm text-gray-700">
+            {STEPS.map((s, i) => {
+              const isComplete = completedSteps.includes(i);
+              const isActive = currentStep === i;
+              return (
+                <li key={i} className="flex items-center gap-2">
+                  {isActive ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+                  ) : isComplete ? (
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                  ) : (
+                    <div className="w-4 h-4 border border-gray-300 rounded-full" />
+                  )}
+                  <span>
+                    {isActive
+                      ? s.action
+                      : isComplete
+                      ? s.done
+                      : s.action}
+                    {isActive && i === 5 && proofGenerating && (
+                      <span className="ml-2 text-xs text-gray-500">{proofElapsed}s</span>
+                    )}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+
+          <button
+            onClick={handleProve}
+            disabled={loading}
+            className={`w-full py-2.5 px-4 rounded-xl text-white font-semibold text-sm tracking-tight 
+              bg-gradient-to-br from-blue-500 to-indigo-600 
+              hover:brightness-105 active:scale-95 transition transform shadow-lg ${
+                loading ? "opacity-60 cursor-not-allowed" : ""
+              }`}
+          >
+            {loading ? "Generating Proof..." : "Generate Proof"}
+          </button>
+
+          {error && (
+            <div className="text-sm text-red-600 mt-2 bg-red-50 border border-red-200 px-3 py-2 rounded-md">
+              ❌ {error}
+            </div>
+          )}
+        </div>
+
+        <div className="bg-gray-900 text-green-300 rounded-xl p-6 shadow-inner text-sm overflow-auto h-[400px]">
+          <div className="font-mono whitespace-pre-wrap leading-relaxed space-y-1">
+            {logs.length === 0 ? (
+              <span className="text-gray-500">Waiting for proof request...</span>
+            ) : (
+              logs.map((line, i) => <div key={i}>{line}</div>)
+            )}
           </div>
-        )}
+        </div>
       </div>
-    </main>
+      <footer className="mt-12 pt-6 border-t border-gray-200 text-center text-sm text-gray-500">
+        <p>
+          This proof system is powered by{" "}
+          <a
+            href="https://noir-lang.org"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-black"
+          >
+            Noir
+          </a>{" "}
+          and zero-knowledge cryptography.
+        </p>
+        <p className="mt-1 text-xs text-gray-400">
+          Not officially affiliated with Coinbase.
+        </p>
+      </footer>
+    </div>
   );
+}
+
+async function fetchKycAttestation(address: string): Promise<any> {
+  const now = Math.floor(Date.now() / 1000);
+  const query = `query GetAttestations($recipient: String!, $attester: String!, $schemaId: String!, $now: Int!) {
+    attestations(
+      where: {
+        recipient: { equals: $recipient }
+        schemaId: { equals: $schemaId }
+        attester: { equals: $attester }
+        revocationTime: { equals: 0 }
+        OR: [
+          { expirationTime: { equals: 0 } }
+          { expirationTime: { gt: $now } }
+        ]
+      }
+      orderBy: { time: desc }
+      take: 1
+    ) {
+      txid
+    }
+  }`;
+  const res = await fetch("https://base.easscan.org/graphql", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      query,
+      variables: {
+        recipient: address,
+        attester: "0x357458739F90461b99789350868CD7CF330Dd7EE",
+        schemaId: "0xf8b05c79f090979bf4a80270aba232dff11a10d9ca55c4f88de95317970f0de9",
+        now,
+      },
+    }),
+  });
+  const json = await res.json();
+  return json.data?.attestations?.[0] || null;
+}
+
+async function fetchRawTx(txHash: string): Promise<any> {
+  const res = await fetch(process.env.NEXT_PUBLIC_BASE_RPC_URL as string, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "eth_getTransactionByHash",
+      params: [txHash],
+    }),
+  });
+  const json = await res.json();
+  return json.result;
 }
