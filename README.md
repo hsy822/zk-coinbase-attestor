@@ -12,7 +12,7 @@
 - All proof generation happens client-side
 - The dApp only receives a yes/no result
 - No blockchain transactions required (off-chain verification)
-- Trust is anchored in a verifiable **Portal signature**
+- Trust is anchored in cryptographic proof of Coinbase’s signature inside a ZK circuit
 
 ---
 
@@ -25,21 +25,13 @@
 - User-facing client app to generate proofs
 - Connects wallet and fetches **KYC attestation tx** via EAS + Infura
 - Verifies tx came from Coinbase and matches KYC schema
-- Sends **attestation digest** to Portal server
-- Receives **Portal's signature** over the digest
-- Generates ZK proof (in-browser via Noir) using:
-  - Portal signature
-  - User signature
-  - Attestation calldata
+- Loads attestation tx from EAS/Infura
+- Extracts calldata, signature, and recovers Coinbase public key
+- Generates ZK proof using:
+    - Coinbase signature
+    - User signature
+    - Raw calldata
 - Returns proof securely to dApp via `postMessage`
-
-### Portal Server (Trusted Signer API)
-
-- Signs attestation calldata digests only if:
-  - tx is confirmed to be sent by Coinbase
-  - calldata structure matches expected `attestAccount(...)`
-- Never sees user wallet or address
-- Exposes minimal signing API for digest-only inputs
 
 ### SDK
 
@@ -48,8 +40,8 @@
 - Listens for proof response via `postMessage`
 - Verifies:
   - ZK proof validity
-  - Portal signature
-  - Nonce, origin, timestamp
+  - Public input (Coinbase pubkey matches known address)
+  - Origin, timestamp, nonce for replay protection
 
 ### dApp
 
@@ -64,18 +56,18 @@
 The Noir circuit proves:
 
 1. The user signed a message (attestation calldata)
-2. The same message was previously **signed by a trusted Portal signer**
+2. The same message was originally signed by Coinbase via an attestation tx
 3. The message structure matches a valid Coinbase KYC attestation
 
 This implies:
 - The user owns the attested address (via signature)
-- The tx was indeed a Coinbase KYC attestation (via Portal signer)
+- The tx was indeed a Coinbase KYC attestation
 
 ### Inputs:
-- `calldata`: calldata from the KYC tx
-- `digest`: `keccak256(calldata)`
-- `portal_sig`: Portal’s ECDSA signature over `digest` (public input)
-- `user_sig`: User’s ECDSA signature over `digest` (private input)
+- calldata
+- coinbase_sig (r, s, v)
+- user_sig
+- coinbase_pubkey (pub input)
 
 ---
 
