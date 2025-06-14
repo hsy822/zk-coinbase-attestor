@@ -5,6 +5,16 @@
 
 ---
 
+## Getting Started
+
+```bash
+pnpm install
+pnpm --filter @zk/coinbase-attestor run build
+pnpm --filter proof-portal dev
+pnpm --filter demo-dapp dev
+```
+and connect to `http://localhost:3000`
+
 ## Project Overview
 
 `zk-Coinbase-Attestor` allows users to prove they own a **Coinbase KYC-verified wallet address** without exposing that address to the dApp.
@@ -49,6 +59,19 @@
 - Receives only `true/false` result
 - Decides access or benefits accordingly
 
+To verify KYC status, simply import and call:
+
+```js
+import { requestZkKycProof } from '@zk/coinbase-attestor';
+
+const result = await requestZkKycProof();
+
+if (result.success) {
+  // User is KYC verified
+} else {
+  // Verification failed
+}
+```
 ---
 
 ## What the Circuit Proves
@@ -76,10 +99,11 @@ This implies:
 | Task | Status |
 |------|--------|
 | Architecture designed | ✅ Complete  
-| Circuit implemented & tested | 🔄 In Progress
-| SDK (proof request + validation) | 🔄 In Progress
-| Proof Portal built | 🔄 In Progress 
-| End-to-end flow (dApp → portal → dApp) | 🔜 Coming Soon
-| Replay protection (nonce, timestamp, origin) | 🔜 Coming Soon
+| Circuit implemented & tested | ✅ Complete  
+| SDK (proof request + validation) | ✅ Complete  
+| Proof Portal built | ✅ Complete  
+| End-to-end flow (dApp → portal → dApp) | ✅ Complete  
+| Replay protection (nonce, timestamp, origin) | ✅ Complete  
+| Demo dApp integration | ✅ Complete  
 | Vercel deployment | 🔜 Coming Soon  
-| Demo dApp integration | 🔜 Coming Soon  
+

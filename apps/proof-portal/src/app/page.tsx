@@ -22,6 +22,15 @@ export default function ProofPortal() {
   const [error, setError] = useState("");
   const [proofGenerating, setProofGenerating] = useState(false);
   const [proofElapsed, setProofElapsed] = useState(0);
+  const [proofGenerated, setProofGenerated] = useState(false);
+  const [countdown, setCountdown] = useState(3);
+  const [fromSdk, setFromSdk] = useState(false);
+
+  useEffect(() => {
+    if (window.opener) {
+      setFromSdk(true);
+    }
+  }, []);
 
   useEffect(() => {
     if (proofGenerating) {
@@ -126,9 +135,37 @@ export default function ProofPortal() {
         const proof = await backend.generateProof(witness, { keccak: true });
         backend.destroy();
         const duration = (Date.now() - start) / 1000;
-        const proofHex = "0x" + Buffer.from(proof.proof).toString("hex");
+        // const proofHex = "0x" + Buffer.from(proof.proof).toString("hex");
         setProofGenerating(false);
         logStep(`✅ ZK Proof generated (${duration.toFixed(1)}s)`);
+        setProofGenerated(true);
+
+        const params = new URLSearchParams(window.location.search);
+        const meta = {
+          origin: params.get("origin") || "unknown",
+          timestamp: Math.floor(Date.now() / 1000),
+          nonce: params.get("nonce") || "missing"
+        };
+
+        window.opener?.postMessage(
+          { 
+            type: "zk-coinbase-proof", 
+            proof: proof.proof, 
+            publicInputs: proof.publicInputs, 
+            meta 
+          }, 
+        "*");
+
+        let c = 3;
+        const interval = setInterval(() => {
+          c--;
+          setCountdown(c);
+          if (c === 0) {
+            clearInterval(interval);
+            window.close();
+          }
+        }, 1000);
+
       });
 
       setCurrentStep(null);
@@ -181,19 +218,40 @@ export default function ProofPortal() {
 
           <button
             onClick={handleProve}
-            disabled={loading}
+            disabled={!fromSdk || loading}
             className={`w-full py-2.5 px-4 rounded-xl text-white font-semibold text-sm tracking-tight 
               bg-gradient-to-br from-blue-500 to-indigo-600 
               hover:brightness-105 active:scale-95 transition transform shadow-lg ${
                 loading ? "opacity-60 cursor-not-allowed" : ""
-              }`}
+              } ${!fromSdk ? "opacity-50 cursor-not-allowed" : ""}` }
           >
             {loading ? "Generating Proof..." : "Generate Proof"}
           </button>
+          
+          {!fromSdk && (
+            <div className="text-sm text-gray-600 bg-yellow-50 border border-yellow-200 px-3 py-2 mt-2 rounded-md">
+              🚫 This proof portal must be opened through a dApp.
+            </div>
+          )}
 
           {error && (
             <div className="text-sm text-red-600 mt-2 bg-red-50 border border-red-200 px-3 py-2 rounded-md">
               ❌ {error}
+            </div>
+          )}
+
+          {proofGenerated && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-sm text-green-800 mt-4">
+              ✅ Proof successfully generated!<br />
+              Redirecting to dApp in {countdown}s...
+              <div className="mt-2">
+                <button
+                  onClick={submitProofAndClose}
+                  className="px-3 py-1.5 bg-green-600 text-white rounded-md hover:bg-green-700"
+                >
+                  👉 Go now
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -280,3 +338,7 @@ async function fetchRawTx(txHash: string): Promise<any> {
   const json = await res.json();
   return json.result;
 }
+
+const submitProofAndClose = () => {
+  window.close();
+};
