@@ -13,7 +13,7 @@ pnpm --filter @zk/coinbase-attestor run build
 pnpm --filter proof-portal dev
 pnpm --filter demo-dapp dev
 ```
-and connect to `http://localhost:3000`
+and connect to `http://localhost:4000`
 
 ## Project Overview
 
