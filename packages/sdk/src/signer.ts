@@ -11,9 +11,6 @@ export function validateMetadata(meta: ProofMeta): void {
   const now = Math.floor(Date.now() / 1000);
   const age = now - meta.timestamp;
   
-  console.log(meta.origin)
-  console.log(window.location.origin)
-
   if (meta.origin !== window.location.origin) {
     throw new Error("Origin mismatch");
   }

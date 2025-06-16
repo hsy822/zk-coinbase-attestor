@@ -1,13 +1,19 @@
 import { UltraHonkBackend } from "@aztec/bb.js";
 export async function verifyProof(proofHex, publicInputs, circuitUrl) {
     try {
+        console.time("⏳ fetch circuit");
         const metadata = await fetch(circuitUrl).then((res) => res.json());
+        console.timeEnd("⏳ fetch circuit");
+        console.time("⚙️ wasm init");
         const backend = new UltraHonkBackend(metadata.bytecode, { threads: 2 });
+        console.timeEnd("⚙️ wasm init");
+        console.time("✅ verify");
         const proofBytes = hexToBytes(proofHex);
         const result = await backend.verifyProof({
             proof: proofBytes,
             publicInputs,
         }, { keccak: true });
+        console.timeEnd("✅ verify");
         backend.destroy();
         return result;
     }
