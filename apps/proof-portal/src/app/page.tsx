@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import { Noir } from "@noir-lang/noir_js";
 import { UltraHonkBackend } from "@aztec/bb.js";
-import { Loader2, CheckCircle, ListTree } from "lucide-react";
+import { Loader2, CheckCircle, ListTree, ShieldCheck, Sparkles } from "lucide-react";
 
 const STEPS = [
   { action: "Connecting wallet", done: "Wallet connected" },
@@ -177,36 +177,36 @@ export default function ProofPortal() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white text-gray-800 font-sans p-8">
+    <div className="min-h-screen bg-gradient-to-br from-[#0f0f0f] to-[#1c1c1c] text-white font-sans p-8">
       <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white border border-gray-200 rounded-xl shadow-md p-6 space-y-5">
-          <h1 className="text-xl font-bold text-center">
-            Prove your Coinbase KYC — privately, directly from your browser.
-          </h1>
-          <div className="flex items-center gap-2 text-blue-600 font-semibold text-sm">
-            <ListTree className="w-4 h-4" />
-            Process
+        <div className="bg-[#121212] border border-gray-800 rounded-2xl shadow-xl p-6 space-y-6">
+          <div className="flex items-center justify-center gap-2 text-indigo-400 font-semibold text-sm">
+            <Sparkles className="w-5 h-5 animate-pulse" />
+            <span>Zero-Knowledge Attestation Flow</span>
           </div>
-
-          <ul className="space-y-2 text-sm text-gray-700">
+  
+          <h1 className="text-2xl font-extrabold text-center text-white">
+            🔐 Verify Coinbase KYC Privately
+          </h1>
+          <p className="text-center text-sm text-gray-400 leading-relaxed">
+            Generate a zero-knowledge proof of your KYC status directly in your browser. No data ever leaves your device.
+          </p>
+  
+          <ul className="space-y-3 text-sm text-gray-300">
             {STEPS.map((s, i) => {
               const isComplete = completedSteps.includes(i);
               const isActive = currentStep === i;
               return (
                 <li key={i} className="flex items-center gap-2">
                   {isActive ? (
-                    <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+                    <Loader2 className="w-4 h-4 animate-spin text-indigo-400" />
                   ) : isComplete ? (
-                    <CheckCircle className="w-4 h-4 text-green-500" />
+                    <CheckCircle className="w-4 h-4 text-emerald-400" />
                   ) : (
-                    <div className="w-4 h-4 border border-gray-300 rounded-full" />
+                    <div className="w-4 h-4 border border-gray-600 rounded-full" />
                   )}
-                  <span>
-                    {isActive
-                      ? s.action
-                      : isComplete
-                      ? s.done
-                      : s.action}
+                  <span className="tracking-tight">
+                    {isActive ? s.action : isComplete ? s.done : s.action}
                     {isActive && i === 5 && proofGenerating && (
                       <span className="ml-2 text-xs text-gray-500">{proofElapsed}s</span>
                     )}
@@ -215,48 +215,50 @@ export default function ProofPortal() {
               );
             })}
           </ul>
-
+  
           <button
             onClick={handleProve}
             disabled={!fromSdk || loading}
-            className={`w-full py-2.5 px-4 rounded-xl text-white font-semibold text-sm tracking-tight 
-              bg-gradient-to-br from-blue-500 to-indigo-600 
-              hover:brightness-105 active:scale-95 transition transform shadow-lg ${
-                loading ? "opacity-60 cursor-not-allowed" : ""
-              } ${!fromSdk ? "opacity-50 cursor-not-allowed" : ""}` }
+            className={`w-full py-3 px-5 rounded-xl text-white font-semibold text-sm tracking-tight
+              bg-gradient-to-r from-purple-600 to-indigo-500 hover:brightness-110 active:scale-95
+              transition transform shadow-lg ${loading || !fromSdk ? "opacity-50 cursor-not-allowed" : ""}`}
           >
-            {loading ? "Generating Proof..." : "Generate Proof"}
+            {loading ? "Generating ZK Proof..." : "Generate ZK Proof Securely"}
           </button>
-          
+  
           {!fromSdk && (
-            <div className="text-sm text-gray-600 bg-yellow-50 border border-yellow-200 px-3 py-2 mt-2 rounded-md">
-              🚫 This proof portal must be opened through a dApp.
+            <div className="text-sm text-yellow-400 bg-yellow-900 bg-opacity-10 border border-yellow-500 px-3 py-2 mt-2 rounded-md">
+              🚫 This proof portal must be opened through a dApp for origin validation.
             </div>
           )}
-
+  
           {error && (
-            <div className="text-sm text-red-600 mt-2 bg-red-50 border border-red-200 px-3 py-2 rounded-md">
+            <div className="text-sm text-red-400 bg-red-900 bg-opacity-10 border border-red-500 px-3 py-2 rounded-md">
               ❌ {error}
             </div>
           )}
-
+  
           {proofGenerated && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-sm text-green-800 mt-4">
-              ✅ Proof successfully generated!<br />
-              Redirecting to dApp in {countdown}s...
-              <div className="mt-2">
+            <div className="bg-emerald-50 border border-emerald-300 rounded-xl p-4 text-sm text-emerald-800 mt-6 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="font-semibold">
+                  Proof successfully generated
+                </div>
+                <span className="text-xs text-emerald-600">Redirecting in {countdown}s</span>
+              </div>
+              <div>
                 <button
                   onClick={submitProofAndClose}
-                  className="px-3 py-1.5 bg-green-600 text-white rounded-md hover:bg-green-700"
+                  className="mt-2 inline-block px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-md transition"
                 >
-                  👉 Go now
+                  Go to dApp now
                 </button>
               </div>
             </div>
           )}
         </div>
-
-        <div className="bg-gray-900 text-green-300 rounded-xl p-6 shadow-inner text-sm overflow-auto h-[400px]">
+  
+        <div className="bg-black text-green-400 rounded-2xl p-6 shadow-inner text-xs overflow-auto h-[400px] border border-gray-800">
           <div className="font-mono whitespace-pre-wrap leading-relaxed space-y-1">
             {logs.length === 0 ? (
               <span className="text-gray-500">Waiting for proof request...</span>
@@ -266,26 +268,19 @@ export default function ProofPortal() {
           </div>
         </div>
       </div>
-      <footer className="mt-12 pt-6 border-t border-gray-200 text-center text-sm text-gray-500">
-        <p>
-          This proof system is powered by{" "}
-          <a
-            href="https://noir-lang.org"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline hover:text-black"
-          >
-            Noir
-          </a>{" "}
-          and zero-knowledge cryptography.
-        </p>
-        <p className="mt-1 text-xs text-gray-400">
-          Not officially affiliated with Coinbase.
+  
+      <footer className="mt-12 pt-6 border-t border-gray-800 text-center text-sm text-gray-500">
+        <div className="flex items-center justify-center gap-1 text-gray-600">
+          <ShieldCheck className="w-4 h-4" />
+          Proof system powered by <a href="https://noir-lang.org" target="_blank" className="underline text-white ml-1">Noir</a> and ZK cryptography.
+        </div>
+        <p className="mt-1 text-xs text-gray-600">
+          Not affiliated with Coinbase.
         </p>
       </footer>
     </div>
   );
-}
+}  
 
 async function fetchKycAttestation(address: string): Promise<any> {
   const now = Math.floor(Date.now() / 1000);
