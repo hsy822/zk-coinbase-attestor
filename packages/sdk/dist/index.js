@@ -7,7 +7,7 @@ export async function requestZkKycProof() {
         const origin = window.location.origin;
         const nonce = crypto.randomUUID();
         const url = `${PROOF_PORTAL_URL}?origin=${encodeURIComponent(origin)}&nonce=${nonce}`;
-        const popup = window.open(url, "_blank");
+        const popup = window.open(url, "_blank", "popup,width=1000,height=800");
         if (!popup) {
             return resolve({ success: false, error: "Popup blocked" });
         }

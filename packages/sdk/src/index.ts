@@ -18,7 +18,7 @@ export async function requestZkKycProof(): Promise<ProofResult> {
     const popup = window.open(
       url,
       "_blank",
-      // "width=480,height=700"
+      "popup,width=1000,height=800"
     );
 
     if (!popup) {
