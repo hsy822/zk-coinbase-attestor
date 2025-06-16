@@ -1,0 +1,10 @@
+{
+	"projects": {
+		"proof-portal": {
+			"source": "apps/proof-portal",
+			"buildCommand": "pnpm --filter proof-portal build",
+			"outputDirectory": "apps/proof-portal/.next"
+		}
+	}
+}
+  
