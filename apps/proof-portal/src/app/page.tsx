@@ -147,7 +147,7 @@ export default function ProofPortal() {
           nonce: params.get("nonce") || "missing"
         };
 
-        console.log(window.opener)
+        console.log(window.opener);
         console.log({ 
           type: "zk-coinbase-proof", 
           proof: proof.proof, 
