@@ -16,7 +16,7 @@ export default function AirdropVerifierDApp() {
       setShowSuccess(true);
     } else {
       setStatus('error');
-      setError(result.error || 'Verification failed');
+      setError((result as any).error || 'Verification failed');
     }
   };
 
