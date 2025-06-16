@@ -147,15 +147,6 @@ export default function ProofPortal() {
           nonce: params.get("nonce") || "missing"
         };
 
-        console.log(window.opener);
-        console.log({ 
-          type: "zk-coinbase-proof", 
-          proof: proof.proof, 
-          publicInputs: proof.publicInputs, 
-          meta 
-        })
-
-
         window.opener?.postMessage(
           { 
             type: "zk-coinbase-proof", 
@@ -165,15 +156,15 @@ export default function ProofPortal() {
           }, 
         "*");
 
-        // let c = 3;
-        // const interval = setInterval(() => {
-        //   c--;
-        //   setCountdown(c);
-        //   if (c === 0) {
-        //     clearInterval(interval);
-        //     window.close();
-        //   }
-        // }, 1000);
+        let c = 3;
+        const interval = setInterval(() => {
+          c--;
+          setCountdown(c);
+          if (c === 0) {
+            clearInterval(interval);
+            window.close();
+          }
+        }, 1000);
 
       });
 
