@@ -31,6 +31,8 @@ export async function requestZkKycProof(): Promise<ProofResult> {
     }, 120000);
 
     function handler(event: MessageEvent) {
+      console.log({event});
+      
       if (event.origin !== ALLOWED_ORIGIN) return;
       const { type, proof, publicInputs, meta } = event.data || {};
       if (type !== "zk-coinbase-proof") return;
@@ -40,7 +42,14 @@ export async function requestZkKycProof(): Promise<ProofResult> {
         window.removeEventListener("message", handler);
 
         // Step 1: validate metadata
-        validateMetadata(meta);
+        try {
+          validateMetadata(meta);
+          console.log("✅ metadata validated");
+        } catch (err: any) {
+          console.error("❌ metadata validation failed:", err);
+          resolve({ success: false, error: err.message });
+          return;
+        }
 
         // Step 2: verify proof
         verifyProof(proof, publicInputs, CIRCUIT_URL).then((isValid: any) => {

@@ -16,6 +16,7 @@ export async function requestZkKycProof() {
             window.removeEventListener("message", handler);
         }, 120000);
         function handler(event) {
+            console.log({ event });
             if (event.origin !== ALLOWED_ORIGIN)
                 return;
             const { type, proof, publicInputs, meta } = event.data || {};
@@ -25,7 +26,15 @@ export async function requestZkKycProof() {
                 clearTimeout(timeout);
                 window.removeEventListener("message", handler);
                 // Step 1: validate metadata
-                validateMetadata(meta);
+                try {
+                    validateMetadata(meta);
+                    console.log("✅ metadata validated");
+                }
+                catch (err) {
+                    console.error("❌ metadata validation failed:", err);
+                    resolve({ success: false, error: err.message });
+                    return;
+                }
                 // Step 2: verify proof
                 verifyProof(proof, publicInputs, CIRCUIT_URL).then((isValid) => {
                     if (isValid) {
