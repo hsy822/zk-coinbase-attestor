@@ -165,15 +165,15 @@ export default function ProofPortal() {
           }, 
         "*");
 
-        let c = 3;
-        const interval = setInterval(() => {
-          c--;
-          setCountdown(c);
-          if (c === 0) {
-            clearInterval(interval);
-            window.close();
-          }
-        }, 1000);
+        // let c = 3;
+        // const interval = setInterval(() => {
+        //   c--;
+        //   setCountdown(c);
+        //   if (c === 0) {
+        //     clearInterval(interval);
+        //     window.close();
+        //   }
+        // }, 1000);
 
       });
 
