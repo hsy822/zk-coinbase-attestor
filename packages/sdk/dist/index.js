@@ -14,7 +14,7 @@ export async function requestZkKycProof() {
         const timeout = setTimeout(() => {
             resolve({ success: false, error: "Timed out waiting for proof" });
             window.removeEventListener("message", handler);
-        }, 30000);
+        }, 60000);
         function handler(event) {
             if (event.origin !== ALLOWED_ORIGIN)
                 return;
