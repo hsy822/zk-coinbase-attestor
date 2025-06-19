@@ -8,7 +8,6 @@ export async function verifyProof(proofHex, publicInputs, circuitUrl) {
             proof: proofBytes,
             publicInputs,
         }, { keccak: true });
-        console.timeEnd("✅ verify");
         backend.destroy();
         return result;
     }

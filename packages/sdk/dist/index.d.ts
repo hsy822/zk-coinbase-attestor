@@ -10,11 +10,9 @@ export declare function openZkKycPopup(): Promise<{
     proof: string;
     publicInputs: string[];
     meta: any;
-    tx: any;
 }>;
-export declare function verifyZkKycProof({ proof, publicInputs, meta, tx, }: {
+export declare function verifyZkKycProof({ proof, publicInputs, meta, }: {
     proof: string;
     publicInputs: string[];
     meta: any;
-    tx: any;
 }): Promise<ProofResult>;

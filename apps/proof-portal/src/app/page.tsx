@@ -155,7 +155,6 @@ export default function ProofPortal() {
             proof: proof.proof, 
             publicInputs: proof.publicInputs, 
             meta,
-            tx 
           }, 
         "*");
 

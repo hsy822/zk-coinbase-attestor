@@ -1,7 +1,6 @@
 import { verifyProof } from "./verifier";
 import { validateMetadata } from "./signer";
-import { CIRCUIT_URL, PROOF_PORTAL_URL, ALLOWED_ORIGIN } from "./constants";
-import { ethers } from "ethers";
+import { CIRCUIT_URL, PROOF_PORTAL_URL, ALLOWED_ORIGIN, COINBASE_PUBKEY } from "./constants";
 export async function openZkKycPopup() {
     return new Promise((resolve, reject) => {
         const origin = window.location.origin;
@@ -17,40 +16,33 @@ export async function openZkKycPopup() {
         function handler(event) {
             if (event.origin !== ALLOWED_ORIGIN)
                 return;
-            const { type, proof, publicInputs, meta, tx } = event.data || {};
+            const { type, proof, publicInputs, meta } = event.data || {};
             if (type !== "zk-coinbase-proof")
                 return;
             clearTimeout(timeout);
             window.removeEventListener("message", handler);
-            resolve({ proof, publicInputs, meta, tx });
+            resolve({ proof, publicInputs, meta });
         }
         window.addEventListener("message", handler);
     });
 }
-export async function verifyZkKycProof({ proof, publicInputs, meta, tx, }) {
+export async function verifyZkKycProof({ proof, publicInputs, meta, }) {
     try {
         // 1. validate metadata
         validateMetadata(meta);
-        // 2. recompute digest from calldata
-        const calldata = tx.input.slice(0, 74);
-        const calldataBytes = ethers.getBytes(calldata);
-        const digest = ethers.keccak256(calldataBytes);
-        // 3. recover Coinbase pubkey from tx.vrs
-        const sigCB = { r: tx.r, s: tx.s, v: parseInt(tx.v) };
-        const cbPubkeyHex = ethers.SigningKey.recoverPublicKey(digest, sigCB);
-        const cbPub = ethers.getBytes(cbPubkeyHex);
-        const cbX = cbPub.slice(1, 33);
-        const cbY = cbPub.slice(33);
-        // 4. extract publicInputs[0–63] as 32-byte x/y
-        const expectedX = hexStringsToUint8Array(publicInputs.slice(0, 32));
-        const expectedY = hexStringsToUint8Array(publicInputs.slice(32, 64));
-        if (!arraysEqual(cbX, expectedX)) {
+        // 2. extract publicInputs[0–63] as 32-byte x/y
+        const pubX = hexStringsToUint8Array(publicInputs.slice(0, 32));
+        const pubY = hexStringsToUint8Array(publicInputs.slice(32, 64));
+        console.log({ pubX });
+        console.log({ COINBASE_PUBKEY: COINBASE_PUBKEY.x });
+        // 3. compare with known Coinbase attester pubkey
+        if (!arraysEqual(pubX, COINBASE_PUBKEY.x)) {
             throw new Error("Coinbase public key X mismatch");
         }
-        if (!arraysEqual(cbY, expectedY)) {
+        if (!arraysEqual(pubY, COINBASE_PUBKEY.y)) {
             throw new Error("Coinbase public key Y mismatch");
         }
-        // 5. verify ZK proof
+        // 4. verify ZK proof
         const isValid = await verifyProof(proof, publicInputs, CIRCUIT_URL);
         if (!isValid)
             throw new Error("Invalid proof");
