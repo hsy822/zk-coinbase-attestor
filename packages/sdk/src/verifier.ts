@@ -18,7 +18,6 @@ export async function verifyProof(
       },
       { keccak: true }
     );
-    console.timeEnd("✅ verify");
     backend.destroy();
     return result;
   } catch (err) {
