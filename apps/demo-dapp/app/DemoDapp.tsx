@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { requestZkKycProof } from '@zk/coinbase-attestor';
+import { openZkKycPopup, verifyZkKycProof } from '@zk/coinbase-attestor';
 
 export default function AirdropVerifierDApp() {
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -10,7 +10,10 @@ export default function AirdropVerifierDApp() {
   const handleVerify = async () => {
     setStatus('loading');
     setError(null);
-    const result = await requestZkKycProof();
+    const rawProof = await openZkKycPopup();
+    console.log({rawProof})
+    const result = await verifyZkKycProof(rawProof); 
+
     if (result.success) {
       setStatus('success');
       setShowSuccess(true);

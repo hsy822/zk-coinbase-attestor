@@ -147,12 +147,15 @@ export default function ProofPortal() {
           nonce: params.get("nonce") || "missing"
         };
 
+        console.log("publicInputs from portal:", proof.publicInputs);
+
         window.opener?.postMessage(
           { 
             type: "zk-coinbase-proof", 
             proof: proof.proof, 
             publicInputs: proof.publicInputs, 
-            meta 
+            meta,
+            tx 
           }, 
         "*");
 
