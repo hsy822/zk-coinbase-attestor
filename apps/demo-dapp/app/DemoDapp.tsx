@@ -79,12 +79,28 @@ export default function AirdropVerifierDApp() {
             disabled={status === 'loading'}
             className={`w-full py-3 px-6 text-sm font-semibold rounded-xl shadow-md transition text-white tracking-tight
               ${status === 'loading'
-                ? 'bg-gray-300 cursor-not-allowed'
+                ? 'bg-gray-300 cursor-not-allowed flex items-center justify-center gap-2'
                 : 'bg-gradient-to-r from-black to-gray-700 hover:brightness-110 active:scale-95'}
             `}
           >
-            {status === 'loading' ? 'Verifying your proof...' : 'Continue to Coinbase Proof Portal'}
+            {status === 'loading' ? (
+              <>
+                <svg className="animate-spin h-4 w-4 text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg>
+                Verifying your proof...
+              </>
+            ) : (
+              "Continue to Coinbase Proof Portal"
+            )}
           </button>
+
+          {status === 'loading' && (
+            <p className="text-sm text-gray-500 text-center mt-2">
+              This may take around 5 seconds. Please keep this page open.
+            </p>
+          )}
 
           {status === 'error' && (
             <div className="bg-red-50 border border-red-300 text-red-700 text-sm rounded-md px-4 py-3 shadow-sm">
