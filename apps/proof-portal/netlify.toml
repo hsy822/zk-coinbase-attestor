@@ -1,5 +1,5 @@
 [build]
-command = "pnpm build"
+command = "pnpm --filter proof-portal build"
 publish = "apps/proof-portal/out"
 
 [[redirects]]
