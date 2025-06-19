@@ -28,7 +28,7 @@ export async function openZkKycPopup(): Promise<{
       console.log('origin', event.origin)
       console.log('allow', ALLOWED_ORIGIN)
 
-      if (event.origin !== ALLOWED_ORIGIN) return;
+      // if (event.origin !== ALLOWED_ORIGIN) return;
       const { type, proof, publicInputs, meta } = event.data || {};
       if (type !== "zk-coinbase-proof") return;
 
