@@ -1,6 +1,6 @@
 [build]
-command = "pnpm next build"
-publish = ".next"
+command = "pnpm --filter proof-portal... build"
+publish = "apps/proof-portal/.next"
 
 [[redirects]]
 from = "/*"
