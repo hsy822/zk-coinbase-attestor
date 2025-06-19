@@ -33,8 +33,6 @@ export async function verifyZkKycProof({ proof, publicInputs, meta, }) {
         // 2. extract publicInputs[0–63] as 32-byte x/y
         const pubX = hexStringsToUint8Array(publicInputs.slice(0, 32));
         const pubY = hexStringsToUint8Array(publicInputs.slice(32, 64));
-        console.log({ pubX });
-        console.log({ COINBASE_PUBKEY: COINBASE_PUBKEY.x });
         // 3. compare with known Coinbase attester pubkey
         if (!arraysEqual(pubX, COINBASE_PUBKEY.x)) {
             throw new Error("Coinbase public key X mismatch");
