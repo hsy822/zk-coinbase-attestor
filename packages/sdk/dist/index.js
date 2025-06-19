@@ -14,7 +14,8 @@ export async function openZkKycPopup() {
             reject(new Error("Timed out waiting for proof"));
         }, 120000);
         function handler(event) {
-            console.log(event.origin, ALLOWED_ORIGIN);
+            console.log('origin', event.origin);
+            console.log('allow', ALLOWED_ORIGIN);
             if (event.origin !== ALLOWED_ORIGIN)
                 return;
             const { type, proof, publicInputs, meta } = event.data || {};
