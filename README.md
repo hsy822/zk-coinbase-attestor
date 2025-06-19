@@ -64,7 +64,7 @@ and connect to `http://localhost:4000`
 To verify KYC status, simply import and call:
 
 ```js
-import { requestZkKycProof } from '@zk/coinbase-attestor';
+import { openZkKycPopup, verifyZkKycProof } from '@zk/coinbase-attestor';
 
 const raw = await openZkKycPopup('zk-coinbase-attestor');
 
