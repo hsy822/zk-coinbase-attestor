@@ -66,12 +66,14 @@ To verify KYC status, simply import and call:
 ```js
 import { requestZkKycProof } from '@zk/coinbase-attestor';
 
-const result = await requestZkKycProof();
+const raw = await openZkKycPopup('zk-coinbase-attestor');
+
+const result = await verifyZkKycProof(raw);
 
 if (result.success) {
-  // User is KYC verified
+  // Proof verified
 } else {
-  // Verification failed
+  // Show result.error
 }
 ```
 ---
