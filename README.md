@@ -4,6 +4,7 @@
 > This project uses zero-knowledge proofs and a serverless frontend to deliver privacy-preserving KYC verification for dApps.
 
 ---
+Live Demo: [Try it here](https://demo-dapp.netlify.app/)
 
 https://github.com/user-attachments/assets/9dc4d456-699d-42a9-acdf-5e3b29eb417f
 
