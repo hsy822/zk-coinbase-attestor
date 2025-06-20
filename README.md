@@ -33,7 +33,7 @@ and connect to `http://localhost:4000`
 
 ![Editor _ Mermaid Chart-2025-06-11-124646](https://github.com/user-attachments/assets/a2668cf6-99be-4967-8cd7-5e7acd862aa9)
 
-### Proof Portal (React + Tailwind, hosted on Vercel)
+### Proof Portal (React + Tailwind, hosted on Netlify)
 
 - User-facing client app to generate proofs
 - Connects wallet and fetches **KYC attestation tx** via EAS + Infura
@@ -110,5 +110,5 @@ This implies:
 | End-to-end flow (dApp → portal → dApp) | ✅ Complete  
 | Replay protection (nonce, timestamp, origin) | ✅ Complete  
 | Demo dApp integration | ✅ Complete  
-| Vercel deployment | 🔜 Coming Soon  
+| Netlify deployment | ✅ [Complete](https://demo-dapp.netlify.app/)  
 
