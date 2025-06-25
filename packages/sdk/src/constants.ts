@@ -1,7 +1,9 @@
 export const PROOF_PORTAL_URL = "https://silly-taiyaki-c12567.netlify.app/";
+// export const PROOF_PORTAL_URL = "http://localhost:3000";
 export const CIRCUIT_URL =
   "https://raw.githubusercontent.com/hsy822/zk-coinbase-attestor/main/packages/circuit/target/zk_coinbase_attestor.json";
 export const ALLOWED_ORIGIN = "https://silly-taiyaki-c12567.netlify.app/";
+// export const ALLOWED_ORIGIN = "http://localhost:3000";
 export const COINBASE_PUBKEY = {
   x: Uint8Array.from([
     110, 2, 155, 136, 43, 202, 15, 113,

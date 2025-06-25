@@ -52,6 +52,18 @@ export default function AirdropVerifierDApp() {
 
         {/* LEFT: Info */}
         <div className="flex flex-col justify-between bg-gray-50 border border-gray-100 rounded-2xl p-6 shadow-inner">
+          <div className="fixed top-0 left-0 right-0 z-50 bg-green-100 text-green-800 border-b border-green-300 text-sm py-2 px-4 text-center shadow-sm">
+            ⚠️ To use this demo, please complete{" "}
+            <a
+              href="https://www.coinbase.com/onchain-verify"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline font-medium text-green-900 hover:text-green-700"
+            >
+              Coinbase Onchain Verify
+            </a>{" "}
+            first to obtain a KYC attestation.
+          </div>
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">DAO Airdrop Eligibility - Example Dapp</h1>
             <p className="text-gray-700 text-sm mb-4">
