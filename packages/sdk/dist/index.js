@@ -32,7 +32,7 @@ export async function verifyZkKycProof({ proof, publicInputs, meta, }) {
         // 1. validate metadata
         validateMetadata(meta);
         const COINBASE_CONTRACT_BYTES = parseHexAddress(COINBASE_CONTRACT); // Uint8Array(20)
-        const contractBytes = hexStringsToUint8Array(publicInputs.slice(64, 84));
+        const contractBytes = hexStringsToByteArray(publicInputs.slice(64, 84));
         if (!arraysEqual(contractBytes, COINBASE_CONTRACT_BYTES)) {
             throw new Error("Contract address mismatch");
         }
@@ -56,8 +56,14 @@ export async function verifyZkKycProof({ proof, publicInputs, meta, }) {
         return { success: false, error: err.message };
     }
 }
-function hexStringsToUint8Array(hexArr) {
-    return Uint8Array.from(hexArr.map((h) => Number(BigInt(h))));
+function hexStringsToByteArray(hexArr) {
+    const result = [];
+    for (const hex of hexArr) {
+        const clean = hex.startsWith("0x") ? hex.slice(2).padStart(64, "0") : hex.padStart(64, "0");
+        const byte = parseInt(clean.slice(62, 64), 16);
+        result.push(byte);
+    }
+    return Uint8Array.from(result);
 }
 function arraysEqual(a, b) {
     if (a.length !== b.length)
