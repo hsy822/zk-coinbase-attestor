@@ -33,6 +33,8 @@ export async function verifyZkKycProof({ proof, publicInputs, meta, }) {
         validateMetadata(meta);
         const COINBASE_CONTRACT_BYTES = parseHexAddress(COINBASE_CONTRACT); // Uint8Array(20)
         const contractBytes = hexStringsToByteArray(publicInputs.slice(64, 84));
+        console.log({ contractBytes });
+        console.log({ COINBASE_CONTRACT_BYTES });
         if (!arraysEqual(contractBytes, COINBASE_CONTRACT_BYTES)) {
             throw new Error("Contract address mismatch");
         }
