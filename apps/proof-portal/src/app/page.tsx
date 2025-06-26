@@ -141,7 +141,7 @@ export default function ProofPortal() {
         setProofElapsed(0);
         const start = Date.now();
         const proof = await backend.generateProof(witness, { keccak: true });
-        backend.destroy();
+        // backend.destroy();
         const duration = (Date.now() - start) / 1000;
         logStep(`✅ ZK Proof generated (${duration.toFixed(1)}s)`);
         setProofGenerating(false);
