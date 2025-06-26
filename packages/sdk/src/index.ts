@@ -54,10 +54,15 @@ export async function verifyZkKycProof({
     // 1. validate metadata
     validateMetadata(meta);
 
-    console.log({publicInputs})
+    const COINBASE_CONTRACT_BYTES = parseHexAddress(COINBASE_CONTRACT); // Uint8Array(20)
+
+    const contractBytes = hexStringsToUint8Array(publicInputs.slice(64, 84));
+    if (!arraysEqual(contractBytes, COINBASE_CONTRACT_BYTES)) {
+      throw new Error("Contract address mismatch");
+    }
     // 2. extract publicInputs[0–63] as 32-byte x/y
-    const pubX = hexStringsToUint8Array(publicInputs.slice(0, 32));
-    const pubY = hexStringsToUint8Array(publicInputs.slice(32, 64));
+    // const pubX = hexStringsToUint8Array(publicInputs.slice(0, 32));
+    // const pubY = hexStringsToUint8Array(publicInputs.slice(32, 64));
 
     // 3. compare with known Coinbase attester pubkey
     // if (!arraysEqual(pubX, COINBASE_PUBKEY.x)) {
@@ -84,4 +89,14 @@ function hexStringsToUint8Array(hexArr: string[]): Uint8Array {
 function arraysEqual(a: Uint8Array | number[], b: Uint8Array | number[]): boolean {
   if (a.length !== b.length) return false;
   return a.every((v, i) => v === b[i]);
+}
+
+function parseHexAddress(hex: string): Uint8Array {
+  const clean = hex.startsWith("0x") ? hex.slice(2) : hex;
+  if (clean.length !== 40) throw new Error("Invalid address length");
+  const bytes = new Uint8Array(20);
+  for (let i = 0; i < 20; i++) {
+    bytes[i] = parseInt(clean.slice(i * 2, i * 2 + 2), 16);
+  }
+  return bytes;
 }
