@@ -1,6 +1,6 @@
 import { verifyProof } from "./verifier";
 import { validateMetadata } from "./signer";
-import { CIRCUIT_URL, PROOF_PORTAL_URL, ALLOWED_ORIGIN, COINBASE_PUBKEY } from "./constants";
+import { CIRCUIT_URL, PROOF_PORTAL_URL, ALLOWED_ORIGIN, COINBASE_CONTRACT } from "./constants";
 
 export type ProofResult =
   | { success: true; proof: string; publicInputs: any }
@@ -54,17 +54,18 @@ export async function verifyZkKycProof({
     // 1. validate metadata
     validateMetadata(meta);
 
+    console.log({publicInputs})
     // 2. extract publicInputs[0–63] as 32-byte x/y
     const pubX = hexStringsToUint8Array(publicInputs.slice(0, 32));
     const pubY = hexStringsToUint8Array(publicInputs.slice(32, 64));
 
     // 3. compare with known Coinbase attester pubkey
-    if (!arraysEqual(pubX, COINBASE_PUBKEY.x)) {
-      throw new Error("Coinbase public key X mismatch");
-    }
-    if (!arraysEqual(pubY, COINBASE_PUBKEY.y)) {
-      throw new Error("Coinbase public key Y mismatch");
-    }
+    // if (!arraysEqual(pubX, COINBASE_PUBKEY.x)) {
+    //   throw new Error("Coinbase public key X mismatch");
+    // }
+    // if (!arraysEqual(pubY, COINBASE_PUBKEY.y)) {
+    //   throw new Error("Coinbase public key Y mismatch");
+    // }
 
     // 4. verify ZK proof
     const isValid = await verifyProof(proof, publicInputs, CIRCUIT_URL);

@@ -52,8 +52,8 @@ importers:
         specifier: ^5.2.6
         version: 5.2.6
       '@noir-lang/noir_js':
-        specifier: 1.0.0-beta.6
-        version: 1.0.0-beta.6
+        specifier: 1.0.0-beta.7
+        version: 1.0.0-beta.7
       '@rainbow-me/rainbowkit':
         specifier: ^2.2.8
         version: 2.2.8(@tanstack/react-query@5.81.2(react@19.1.0))(@types/react@19.1.8)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.3)(viem@2.31.4(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.22.4))(wagmi@2.15.6(@tanstack/query-core@5.81.2)(@tanstack/react-query@5.81.2(react@19.1.0))(@types/react@19.1.8)(bufferutil@4.0.9)(react@19.1.0)(typescript@5.8.3)(utf-8-validate@5.0.10)(viem@2.31.4(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.22.4))(zod@3.22.4))
@@ -528,17 +528,17 @@ packages:
     resolution: {integrity: sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg==}
     engines: {node: '>= 8'}
 
-  '@noir-lang/acvm_js@1.0.0-beta.6':
-    resolution: {integrity: sha512-/gaUKaUIon3xCekEIvrz9sUj+h1tue6CchNUZwmuXoqbwccRQchr850vbQMQxxnQvFIAfbaKD+Vkkh3RNWpG2Q==}
+  '@noir-lang/acvm_js@1.0.0-beta.7':
+    resolution: {integrity: sha512-AKm2fm9FphUIf5+GNNWHc3vehr0lpyt0rulM1JP307Awb7jQcsMOK+s6NqdrTii+iPOL1pA8b++UEe+tSpCsSQ==}
 
-  '@noir-lang/noir_js@1.0.0-beta.6':
-    resolution: {integrity: sha512-FRHrCgRcyD4LAh4FtVYZh/wwdoV2px3kokudLl5GfFaBmXHCpXyA0jKzda3ObI/Teasl2VAE+ZQoV7ZKqq5txA==}
+  '@noir-lang/noir_js@1.0.0-beta.7':
+    resolution: {integrity: sha512-5U/NlFyXyn05+RSRtfi24BrTL3oLIz8Nzpdaq8c8YbYEzRLt1//q6j2HZQzcsnM42Bp9rCyH1v9j7ZO8ApeosQ==}
 
-  '@noir-lang/noirc_abi@1.0.0-beta.6':
-    resolution: {integrity: sha512-AFRl7zAK1ooA7AeKTt5dSxjfcXdmpYU4imRx8MS/UGhuLvUULM6d+AQ/OGEb1kdGwnw+qN4REnxJg7R4qsRpVQ==}
+  '@noir-lang/noirc_abi@1.0.0-beta.7':
+    resolution: {integrity: sha512-nXHm6maBXIuivobBnmv1E6Q6SYog3kxUzZ19DU5bWM/UUj43xfQLaDQ8kdtGUyvZYj1HOR0Q9S05EsKyxPhFuA==}
 
-  '@noir-lang/types@1.0.0-beta.6':
-    resolution: {integrity: sha512-YmNOpr51XIOrJ+yppPbDFlpAG6ZU7qh0Uu0ZCXmon2MGD4TlnC8d/ex7YzSUH/+3zgESuCmicKnMVxEFszgmtA==}
+  '@noir-lang/types@1.0.0-beta.7':
+    resolution: {integrity: sha512-2ddzdvATakxfozHeH0lpbJ6k/l4jzq/0djd7QNMG9dUmR9uSBbCxnRDZiK8cD/UVMMJBCL2DDlv5AguuoHeM3A==}
 
   '@paulmillr/qr@0.2.1':
     resolution: {integrity: sha512-IHnV6A+zxU7XwmKFinmYjUcwlyK9+xkG3/s9KcQhI9BjQKycrJ1JRO+FbNYPwZiPKW3je/DR0k7w8/gLa5eaxQ==}
@@ -2768,20 +2768,20 @@ snapshots:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.19.1
 
-  '@noir-lang/acvm_js@1.0.0-beta.6': {}
+  '@noir-lang/acvm_js@1.0.0-beta.7': {}
 
-  '@noir-lang/noir_js@1.0.0-beta.6':
+  '@noir-lang/noir_js@1.0.0-beta.7':
     dependencies:
-      '@noir-lang/acvm_js': 1.0.0-beta.6
-      '@noir-lang/noirc_abi': 1.0.0-beta.6
-      '@noir-lang/types': 1.0.0-beta.6
+      '@noir-lang/acvm_js': 1.0.0-beta.7
+      '@noir-lang/noirc_abi': 1.0.0-beta.7
+      '@noir-lang/types': 1.0.0-beta.7
       pako: 2.1.0
 
-  '@noir-lang/noirc_abi@1.0.0-beta.6':
+  '@noir-lang/noirc_abi@1.0.0-beta.7':
     dependencies:
-      '@noir-lang/types': 1.0.0-beta.6
+      '@noir-lang/types': 1.0.0-beta.7
 
-  '@noir-lang/types@1.0.0-beta.6': {}
+  '@noir-lang/types@1.0.0-beta.7': {}
 
   '@paulmillr/qr@0.2.1': {}
 

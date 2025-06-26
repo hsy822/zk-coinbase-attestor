@@ -13,11 +13,14 @@ import { Loader2, CheckCircle, ShieldCheck, Sparkles } from "lucide-react";
 const STEPS = [
   { action: "Connecting wallet", done: "Wallet connected" },
   { action: "Fetching KYC attestation", done: "KYC attestation fetched" },
-  { action: "Extracting calldata", done: "Calldata extracted" },
-  { action: "Verifying Coinbase signature", done: "Signature verified" },
-  { action: "Signing message", done: "Message signed" },
-  { action: "Generating ZK proof", done: "Proof generated" },
+  { action: "Extracting calldata from tx", done: "Calldata extracted" },
+  { action: "Generating digest from calldata", done: "Digest generated" },
+  { action: "Signing digest and recovering public key", done: "User signature verified" },
+  { action: "Generating ZK proof", done: "ZK proof generated" },
 ];
+
+const COINBASE_CONTRACT = "0x357458739F90461b99789350868CD7CF330Dd7EE";
+const ETH_SIGNED_PREFIX = "\x19Ethereum Signed Message:\n32";
 
 export default function ProofPortal() {
   const [loading, setLoading] = useState(false);
@@ -69,9 +72,8 @@ export default function ProofPortal() {
       let attestation: any;
       let tx: any;
       let calldata: Uint8Array;
-      let digest: string;
-      let cbX: Uint8Array, cbY: Uint8Array;
-      let userX: Uint8Array, userY: Uint8Array, sigUser: ethers.Signature;
+      let digest: string, rawDigest: string;
+      let userX: Uint8Array, userY: Uint8Array, sigUser: ethers.Signature, userAddress: any;
 
       const step = async (i: number, fn: () => Promise<void>) => {
         setCurrentStep(i);
@@ -99,39 +101,48 @@ export default function ProofPortal() {
       });
 
       await step(3, async () => {
-        digest = ethers.keccak256(calldata);
-        const sigCB = { r: tx.r, s: tx.s, v: parseInt(tx.v) };
-        const cbPubkeyHex = ethers.SigningKey.recoverPublicKey(digest, sigCB);
-        const cbPub = ethers.getBytes(cbPubkeyHex);
-        cbX = cbPub.slice(1, 33);
-        cbY = cbPub.slice(33);
-        logStep("Coinbase pubkey recovered");
+        rawDigest = ethers.keccak256(calldata); // keccak(calldata)
+        digest = ethers.keccak256(
+          ethers.concat([
+            ethers.toUtf8Bytes(ETH_SIGNED_PREFIX),
+            ethers.getBytes(rawDigest),
+          ])
+        );
+        logStep("Generated Ethereum-signed digest from calldata");
       });
 
       await step(4, async () => {
-        const digestBytes: Uint8Array = ethers.getBytes(digest);
         const signer = await new ethers.BrowserProvider(walletClient!).getSigner();
-        const sigUserRaw: string = await signer.signMessage(digestBytes);
+        const sigUserRaw = await walletClient!.signMessage({
+          account: signer.address as `0x${string}`,
+          message: { raw: rawDigest as `0x${string}` },
+        });
         sigUser = ethers.Signature.from(sigUserRaw);
-        const userPubkeyHex: string = ethers.SigningKey.recoverPublicKey(digest, sigUser);
-        const userPub = ethers.getBytes(userPubkeyHex);
-        userX = userPub.slice(1, 33);
-        userY = userPub.slice(33);
-        logStep("User signature validated");
+
+        const pubKeyHex = ethers.SigningKey.recoverPublicKey(digest, sigUser);
+        const pubKeyBytes = ethers.getBytes(pubKeyHex);
+        userX = pubKeyBytes.slice(1, 33);
+        userY = pubKeyBytes.slice(33);
+
+        userAddress = signer.address; 
+        logStep("Recovered public key from user signature");
       });
 
       await step(5, async () => {
         const circuitInput = {
           calldata: Array.from(calldata),
+          contract_address: Array.from(ethers.getBytes(COINBASE_CONTRACT)),
+          user_address: Array.from(ethers.getBytes(userAddress)),
+          digest: Array.from(ethers.getBytes(digest)),
           user_sig: Array.from(new Uint8Array([...ethers.getBytes(sigUser.r), ...ethers.getBytes(sigUser.s)])),
-          coinbase_sig: Array.from(new Uint8Array([...ethers.getBytes(tx.r), ...ethers.getBytes(tx.s)])),
           user_pubkey_x: Array.from(userX),
           user_pubkey_y: Array.from(userY),
-          coinbase_pubkey_x: Array.from(cbX),
-          coinbase_pubkey_y: Array.from(cbY),
         };
-        const CIRCUIT_URL = "https://raw.githubusercontent.com/hsy822/zk-coinbase-attestor/main/packages/circuit/target/zk_coinbase_attestor.json";
+        const CIRCUIT_URL = "https://raw.githubusercontent.com/hsy822/zk-coinbase-attestor/develop/packages/circuit/target/zk_coinbase_attestor.json";
+
+        // const metaRes = await fetch("./zk_coinbase_attestor.json");
         const metaRes = await fetch(CIRCUIT_URL);
+
         const metadata = await metaRes.json();
         const noir = new Noir(metadata);
         const backend = new UltraHonkBackend(metadata.bytecode, { threads: 4 });
@@ -140,7 +151,7 @@ export default function ProofPortal() {
         setProofGenerating(true);
         setProofElapsed(0);
         const start = Date.now();
-        const proof = await backend.generateProof(witness, { keccak: true });
+        const proof = await backend.generateProof(witness);
         // backend.destroy();
         const duration = (Date.now() - start) / 1000;
         logStep(`✅ ZK Proof generated (${duration.toFixed(1)}s)`);
@@ -322,7 +333,7 @@ async function fetchKycAttestation(address: string): Promise<any> {
       query,
       variables: {
         recipient: address,
-        attester: "0x357458739F90461b99789350868CD7CF330Dd7EE",
+        attester: COINBASE_CONTRACT,
         schemaId: "0xf8b05c79f090979bf4a80270aba232dff11a10d9ca55c4f88de95317970f0de9",
         now,
       },

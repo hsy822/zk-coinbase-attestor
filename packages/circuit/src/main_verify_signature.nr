@@ -48,7 +48,7 @@ fn main(
     assert(calldata_addr == user_address);
 
     // 4. Verify signature (on prefixed digest)
-    // assert(verify_signature(user_pubkey_x, user_pubkey_y, user_sig, digest));
+    assert(verify_signature(user_pubkey_x, user_pubkey_y, user_sig, digest));
 
     // 5. Compute Ethereum address from pubkey
     let pubkey_bytes = concat_pubkey(user_pubkey_x, user_pubkey_y);
