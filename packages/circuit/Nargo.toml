@@ -3,6 +3,3 @@ name = "zk_coinbase_attestor"
 type = "bin"
 version = "0.1.0"
 authors = ["sooyoung"]
-
-[dependencies]
-ecrecover = { tag = "v1.0.0", git = "https://github.com/colinnielsen/ecrecover-noir" }
