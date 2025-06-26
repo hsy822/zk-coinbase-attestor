@@ -134,7 +134,7 @@ export default function ProofPortal() {
         const metaRes = await fetch(CIRCUIT_URL);
         const metadata = await metaRes.json();
         const noir = new Noir(metadata);
-        const backend = new UltraHonkBackend(metadata.bytecode, { threads: 2 });
+        const backend = new UltraHonkBackend(metadata.bytecode, { threads: 4 });
         const { witness } = await noir.execute(circuitInput);
 
         setProofGenerating(true);
