@@ -1,7 +1,22 @@
-use dep::keccak256::keccak256;
 use std::ecdsa_secp256k1::verify_signature;
 
+global COINBASE_PUBKEY_X: [u8; 32] = [
+    110, 2, 155, 136, 43, 202, 15, 113,
+    253, 226, 124, 73, 244, 53, 240,
+    157, 69, 141, 81, 241, 61, 245, 141,
+    63, 184, 147, 52, 148, 64, 19, 199, 198
+];
+
+global COINBASE_PUBKEY_Y: [u8; 32] = [
+    39, 57, 45, 60, 108, 85, 171, 1,
+    112, 223, 37, 76, 109, 91, 178, 131,
+    212, 100, 46, 216, 65, 17, 184, 195,
+    43, 158, 154, 14, 0, 147, 58, 140
+];
+
 fn main(
+    digest: [u8; 32],
+
     calldata: [u8; 36],               // attestation calldata
     user_sig: [u8; 64],               // user's signature over digest
     coinbase_sig: [u8; 64],           // signature from Coinbase attestor over digest
@@ -12,8 +27,9 @@ fn main(
     coinbase_pubkey_x: pub [u8; 32],  // public input for verification
     coinbase_pubkey_y: pub [u8; 32],
 ) {
-    // Step 1: compute digest
-    let digest = keccak256(calldata, 36);
+    // Step 1: verify Coinbase pubkey
+    assert(coinbase_pubkey_x == COINBASE_PUBKEY_X);
+    assert(coinbase_pubkey_y == COINBASE_PUBKEY_Y);
 
     // Step 2: verify digest was signed by Coinbase attestor
     let verified_cb = verify_signature(
