@@ -1,9 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    experimental: {
-      appDir: true,
-    },
-  };
-  
-  module.exports = nextConfig;
-  
+  output: "export", 
+  experimental: {
+    appDir: true,
+  },
+};
+
+module.exports = nextConfig;
