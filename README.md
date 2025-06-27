@@ -6,7 +6,7 @@
 ---
 Live Demo: [Try it here](https://demo-dapp.netlify.app/)
 
-https://github.com/user-attachments/assets/9dc4d456-699d-42a9-acdf-5e3b29eb417f
+https://github.com/user-attachments/assets/e8685009-e69e-446e-8006-01daab772674
 
 ## Getting Started
 
