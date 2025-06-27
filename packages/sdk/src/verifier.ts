@@ -8,7 +8,7 @@ export async function verifyProof(
   try {
     const metadata = await fetch(circuitUrl).then((res) => res.json());
 
-    const backend = new UltraHonkBackend(metadata.bytecode, { threads: 2 });
+    const backend = new UltraHonkBackend(metadata.bytecode, { threads: 4 });
 
     const proofBytes = hexToBytes(proofHex);
     const result = await backend.verifyProof(
