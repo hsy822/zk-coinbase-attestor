@@ -1,14 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useAccount, useWalletClient } from "wagmi";
-import {
-  useConnectModal,
-} from '@rainbow-me/rainbowkit';
+import { useConnectModal } from '@rainbow-me/rainbowkit';
 import { ethers } from "ethers";
 import { Noir } from "@noir-lang/noir_js";
 import { UltraHonkBackend } from "@aztec/bb.js";
-import { Loader2, CheckCircle, ShieldCheck, Sparkles } from "lucide-react";
+import { Loader2, CheckCircle, Sparkles, ShieldCheck } from "lucide-react";
 
 const STEPS = [
   { action: "Connecting wallet", done: "Wallet connected" },
@@ -26,33 +24,33 @@ export default function ProofPortal() {
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState<number | null>(null);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
-  const [logs, setLogs] = useState<string[]>([]);
-  const [error, setError] = useState("");
-  const [proofGenerating, setProofGenerating] = useState(false);
-  const [proofElapsed, setProofElapsed] = useState(0);
-  const [proofGenerated, setProofGenerated] = useState(false);
+  const [logs, setLogs] = useState<{ text: string, type: string, interactive?: boolean }[]>([]);
   const [proofResult, setProofResult] = useState<null | any>(null);
   const [fromSdk, setFromSdk] = useState(false);
 
   const { isConnected, address } = useAccount();
   const { openConnectModal } = useConnectModal();
   const { data: walletClient } = useWalletClient();
+  const terminalEndRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => { if (window.opener) setFromSdk(true); }, []);
   useEffect(() => {
-    if (window.opener) setFromSdk(true);
-  }, []);
-
-  useEffect(() => {
-    if (proofGenerating) {
-      const startTime = Date.now();
-      const interval = setInterval(() => {
-        setProofElapsed(Math.floor((Date.now() - startTime) / 1000));
-      }, 1000);
-      return () => clearInterval(interval);
+    if (isConnected) {
+      setCompletedSteps([0]);
     }
-  }, [proofGenerating]);
+  }, [isConnected]);
+  useEffect(() => { terminalEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [logs]);
 
-  const logStep = (msg: string) => setLogs((prev) => [...prev, msg]);
+  const appendLog = (text: string, type: string = "info", interactive = false) =>
+    setLogs((prev) => [...prev, { text, type, interactive }]);
+
+  const updateLastLog = (text: string, type: string = "info") =>
+    setLogs((prev) => {
+      const newLogs = [...prev];
+      newLogs[newLogs.length - 1] = { ...newLogs[newLogs.length - 1], text, type };
+      return newLogs;
+    });
+
   const markStepComplete = (i: number) =>
     setCompletedSteps((prev) => [...prev, i]);
 
@@ -67,7 +65,7 @@ export default function ProofPortal() {
       setCurrentStep(null);
       setLogs([]);
       setCompletedSteps([]);
-      setError("");
+      setProofResult(null);
 
       let attestation: any;
       let tx: any;
@@ -77,19 +75,18 @@ export default function ProofPortal() {
 
       const step = async (i: number, fn: () => Promise<void>) => {
         setCurrentStep(i);
-        logStep(STEPS[i].action + "...");
+        appendLog(STEPS[i].action + "...", "info");
         await fn();
         markStepComplete(i);
+        appendLog(`✔ ${STEPS[i].done}`, "success");
       };
 
-      await step(0, async () => {
-        logStep(`Wallet: ${address}`);
-      });
+      await step(0, async () => appendLog(`Wallet: ${address}`, "info"));
 
       await step(1, async () => {
         attestation = await fetchKycAttestation(address!);
         if (!attestation) throw new Error("No valid KYC attestation found.");
-        logStep("Attestation tx: " + attestation.txid);
+        appendLog("Attestation tx: " + attestation.txid, "info");
       });
 
       await step(2, async () => {
@@ -97,18 +94,18 @@ export default function ProofPortal() {
         let calldataHex: string = tx.input;
         if (calldataHex.length < 74) calldataHex = calldataHex.padEnd(74, "0");
         calldata = ethers.getBytes(calldataHex.slice(0, 74));
-        logStep("Extracted calldata (" + calldata.length + " bytes)");
+        appendLog("Extracted calldata (" + calldata.length + " bytes)", "info");
       });
 
       await step(3, async () => {
-        rawDigest = ethers.keccak256(calldata); // keccak(calldata)
+        rawDigest = ethers.keccak256(calldata);
         digest = ethers.keccak256(
           ethers.concat([
             ethers.toUtf8Bytes(ETH_SIGNED_PREFIX),
             ethers.getBytes(rawDigest),
           ])
         );
-        logStep("Generated Ethereum-signed digest from calldata");
+        appendLog("Generated Ethereum-signed digest from calldata", "info");
       });
 
       await step(4, async () => {
@@ -124,8 +121,8 @@ export default function ProofPortal() {
         userX = pubKeyBytes.slice(1, 33);
         userY = pubKeyBytes.slice(33);
 
-        userAddress = signer.address; 
-        logStep("Recovered public key from user signature");
+        userAddress = signer.address;
+        appendLog("Recovered public key from user signature", "info");
       });
 
       await step(5, async () => {
@@ -139,24 +136,23 @@ export default function ProofPortal() {
           user_pubkey_y: Array.from(userY),
         };
         const CIRCUIT_URL = "https://raw.githubusercontent.com/hsy822/zk-coinbase-attestor/develop/packages/circuit/target/zk_coinbase_attestor.json";
-
-        // const metaRes = await fetch("./zk_coinbase_attestor.json");
         const metaRes = await fetch(CIRCUIT_URL);
-
         const metadata = await metaRes.json();
         const noir = new Noir(metadata);
         const backend = new UltraHonkBackend(metadata.bytecode, { threads: 4 });
         const { witness } = await noir.execute(circuitInput);
 
-        setProofGenerating(true);
-        setProofElapsed(0);
         const start = Date.now();
+
         const proof = await backend.generateProof(witness, { keccak: true });
-        // backend.destroy();
-        const duration = (Date.now() - start) / 1000;
-        logStep(`✅ ZK Proof generated (${duration.toFixed(1)}s)`);
-        setProofGenerating(false);
-        setProofGenerated(true);
+
+        const duration = ((Date.now() - start) / 1000).toFixed(1);
+        updateLastLog(`✔ ZK Proof generated (${duration}s)`, "highlight");
+        appendLog(`# A zero-knowledge proof verifying your Coinbase KYC attestation was successfully generated.`, "note");
+        appendLog(`# Entirely inside your browser memory. It was never stored or uploaded.`, "note");
+        appendLog(`# This proof will be sent just once to the originating dApp for verification via postMessage.`, "note");
+        appendLog(`# Afterwards it is discarded. Your wallet & onchain history remain private.`, "note");
+        appendLog(``, "info", true);
 
         const params = new URLSearchParams(window.location.search);
         const meta = {
@@ -174,7 +170,7 @@ export default function ProofPortal() {
 
       setCurrentStep(null);
     } catch (err: any) {
-      setError(err.message || "Unknown error");
+      appendLog(`❌ ${err.message || "Unknown error"}`, "error");
     } finally {
       setLoading(false);
     }
@@ -193,106 +189,73 @@ export default function ProofPortal() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0f0f0f] to-[#1c1c1c] text-white font-sans p-8">
-      <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-[#121212] border border-gray-800 rounded-2xl shadow-xl p-6 space-y-6">
-          <div className="flex items-center justify-center gap-2 text-indigo-400 font-semibold text-sm">
-            <Sparkles className="w-5 h-5 animate-pulse" />
-            <span>Zero-Knowledge Attestation Flow</span>
+    <div className="flex flex-col min-h-screen bg-black text-white font-mono p-8">
+      <main className="flex-grow p-8">
+        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-[#121212] border border-gray-800 rounded-2xl shadow-xl p-6 space-y-6" >
+            <div className="flex items-center justify-center gap-2 text-indigo-400 font-semibold text-sm">
+              <Sparkles className="w-5 h-5 animate-pulse" />
+              <span>Zero-Knowledge Attestation</span>
+            </div>
+            <h1 className="text-2xl font-extrabold text-center text-white">🔐 Private Coinbase KYC Verification</h1>
+            <ul className="space-y-3 text-sm">
+              {STEPS.map((s, i) => {
+                const isComplete = completedSteps.includes(i);
+                const isActive = currentStep === i;
+                return (
+                  <li key={i} className={`flex items-start gap-3 pl-3 border-l-2 ${isComplete ? "border-emerald-400" : isActive ? "border-indigo-400" : "border-gray-700"}`}>
+                    <div className="pt-0.5">
+                      {isActive ? <Loader2 className="w-4 h-4 animate-spin text-indigo-400" /> :
+                        isComplete ? <CheckCircle className="w-4 h-4 text-emerald-400" /> :
+                        <div className="w-3 h-3 rounded-full bg-gray-700"></div>}
+                    </div>
+                    <span className={`${isComplete ? "text-emerald-300" : isActive ? "text-indigo-300" : "text-gray-400"}`}>
+                      {isActive ? s.action : isComplete ? s.done : s.action}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+            <button onClick={handleProve} disabled={!fromSdk || loading}
+              className={`w-full py-3 px-6 rounded-2xl font-semibold text-sm tracking-tight bg-gradient-to-r from-purple-600 to-indigo-500 hover:brightness-125 active:scale-95 shadow-2xl transition ${loading || !fromSdk ? "opacity-50 cursor-not-allowed" : ""}`}>
+              {!isConnected ? "Connect Wallet" : loading ? "Generating ZK Proof..." : "Generate ZK Proof"}
+            </button>
           </div>
-
-          <h1 className="text-2xl font-extrabold text-center text-white">
-            🔐 Verify Coinbase KYC Privately
-          </h1>
-          <p className="text-center text-sm text-gray-400 leading-relaxed">
-            Generate a zero-knowledge proof of your KYC status directly in your browser. No data ever leaves your device.
-          </p>
-
-          <ul className="space-y-3 text-sm text-gray-300">
-            {STEPS.map((s, i) => {
-              const isComplete = completedSteps.includes(i);
-              const isActive = currentStep === i;
-              return (
-                <li key={i} className="flex items-center gap-2">
-                  {isActive ? (
-                    <Loader2 className="w-4 h-4 animate-spin text-indigo-400" />
-                  ) : isComplete ? (
-                    <CheckCircle className="w-4 h-4 text-emerald-400" />
-                  ) : (
-                    <div className="w-4 h-4 border border-gray-600 rounded-full" />
-                  )}
-                  <span className="tracking-tight">
-                    {isActive ? s.action : isComplete ? s.done : s.action}
-                    {isActive && i === 5 && proofGenerating && (
-                      <span className="ml-2 text-xs text-gray-500">{proofElapsed}s</span>
-                    )}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-
-          <button
-            onClick={handleProve}
-            disabled={!fromSdk || loading}
-            className={`w-full py-3 px-5 rounded-xl text-white font-semibold text-sm tracking-tight
-              bg-gradient-to-r from-purple-600 to-indigo-500 hover:brightness-110 active:scale-95
-              transition transform shadow-lg ${loading || !fromSdk ? "opacity-50 cursor-not-allowed" : ""}`}
-          >
-            {loading ? "Generating ZK Proof..." : "Generate ZK Proof"}
-          </button>
-
-          {!fromSdk && (
-            <div className="text-sm text-yellow-400 bg-yellow-900 bg-opacity-10 border border-yellow-500 px-3 py-2 mt-2 rounded-md">
-              🚫 This proof portal must be opened through a dApp for origin validation.
+          <div className="bg-[#0c0c0c] rounded-2xl p-6 shadow-inner text-sm overflow-auto h-[430px] border border-green-700/30 font-mono space-y-1 leading-relaxed">
+            <div className="text-xs text-gray-400 mb-2">
+              [ UltraHonk Proof Generation ]
             </div>
-          )}
-
-          {error && (
-            <div className="text-sm text-red-400 bg-red-900 bg-opacity-10 border border-red-500 px-3 py-2 rounded-md">
-              ❌ {error}
-            </div>
-          )}
-
-          {proofGenerated && proofResult && (
-            <div className="bg-emerald-50 border border-emerald-300 rounded-xl p-5 text-sm text-emerald-900 mt-6 space-y-3 shadow-lg">
-              <div className="flex items-center gap-2 font-semibold text-emerald-800">
-                <CheckCircle className="w-5 h-5" />
-                Zero-Knowledge Proof Ready
+            {logs.map((log, i) => (
+              <div
+                key={i}
+                className={
+                  log.type === "success"
+                    ? "text-emerald-400"
+                    : log.type === "error"
+                    ? "text-red-400"
+                    : log.type === "highlight"
+                    ? "text-sky-400 font-bold"
+                    : log.type === "note"
+                    ? "text-yellow-300"
+                    : "text-white"
+                        }
+                      >
+                {log.text}
               </div>
+            ))}
+            <div ref={terminalEndRef} />
 
-              <p className="text-emerald-800 leading-relaxed">
-                A zero-knowledge proof verifying your Coinbase KYC attestation has been successfully generated.
-                This proof <strong>does not expose your wallet address</strong> and was fully computed locally in your browser.
-              </p>
-
-              <p className="text-emerald-700 text-xs italic">
-                When you click the button below, this proof and its public inputs will be securely sent to the originating dApp using <code>postMessage</code> for verification. No data is persisted.
-              </p>
-
-              <div className="flex flex-col sm:flex-row gap-2 sm:justify-end pt-2">
-                <button
-                  onClick={submitProofAndClose}
-                  className="px-4 py-2 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium"
-                >
-                  Send Proof to dApp
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="bg-black text-green-400 rounded-2xl p-6 shadow-inner text-xs overflow-auto h-[400px] border border-gray-800">
-          <div className="font-mono whitespace-pre-wrap leading-relaxed space-y-1">
-            {logs.length === 0 ? (
-              <span className="text-gray-500">Waiting for proof request...</span>
-            ) : (
-              logs.map((line, i) => <div key={i}>{line}</div>)
+            {logs.some((log) => log.interactive) && (
+              <button
+                onClick={submitProofAndClose}
+                className="mt-4 w-full py-3 px-6 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-500 hover:brightness-125 active:scale-95 shadow-lg transition font-semibold text-sm"
+              >
+                Send Proof to dApp
+              </button>
             )}
           </div>
         </div>
-      </div>
-
+      </main>
       <footer className="mt-12 pt-6 border-t border-gray-800 text-center text-sm text-gray-500">
         <div className="flex items-center justify-center gap-1 text-gray-600">
           <ShieldCheck className="w-4 h-4" />
