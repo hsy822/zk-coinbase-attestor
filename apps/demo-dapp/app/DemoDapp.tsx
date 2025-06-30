@@ -70,12 +70,13 @@ export default function AirdropVerifierDApp() {
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">DAO Airdrop Eligibility - Example Dapp</h1>
             <p className="text-gray-700 text-sm mb-4">
-              This example dApp allows eligible users to privately prove their KYC status to claim DAO airdrops.
+              This example Dapp allows eligible users to privately prove their KYC status to claim DAO airdrops.
             </p>
             <ul className="text-sm text-gray-700 list-disc list-inside space-y-1 mb-4">
-              <li>No wallet connection is required</li>
-              <li>Your address is never shared with this dApp</li>
-              <li>All verification is done via a trusted Proof Portal</li>
+              <li>No wallet connection is ever required on Dapp</li>
+              <li>Generate your proof securely via the Proof Portal</li>
+              <li>All verification runs through a trusted Proof Portal</li>
+              <li>Return here to verify offchain or onchain on Base</li>
             </ul>
           </div>
         </div>

@@ -195,7 +195,7 @@ export default function ProofPortal() {
           <div className="bg-[#121212] border border-gray-800 rounded-2xl shadow-xl p-6 space-y-6" >
             <div className="flex items-center justify-center gap-2 text-indigo-400 font-semibold text-sm">
               <Sparkles className="w-5 h-5 animate-pulse" />
-              <span>Zero-Knowledge Attestation</span>
+              <span>Proof Portal</span>
             </div>
             <h1 className="text-2xl font-extrabold text-center text-white">🔐 Private Coinbase KYC Verification</h1>
             <ul className="space-y-3 text-sm">
