@@ -81,8 +81,8 @@ export default function AirdropVerifierDApp() {
         </div>
 
         {/* Right - Actions */}
-        <div className="flex flex-col items-end justify-between bg-white border border-gray-100 rounded-2xl px-6 py-8 shadow-inner relative">
-          <div className="absolute top-4 right-6 space-y-4 w-full max-w-xs">
+        <div className="flex flex-col items-center justify-between bg-white border border-gray-100 rounded-2xl px-6 py-8 shadow-inner relative">
+          <div className="top-4 right-6 space-y-4 w-full max-w-xs">
 
             {!rawProof && status === 'idle' && (
               <button
@@ -117,7 +117,7 @@ export default function AirdropVerifierDApp() {
             )}
           </div>
 
-          <div className="w-full mt-40 text-center">
+          <div className="mt-6 h-[64px] flex flex-col justify-center items-center text-center space-y-2 text-xs text-gray-500">
             {status === 'ready' && (
               <div className="flex flex-col items-center space-y-2 mt-6 text-center text-xs text-gray-500 leading-relaxed">
                 <p>⚠️ Each proof can be used only once for verification.</p>
