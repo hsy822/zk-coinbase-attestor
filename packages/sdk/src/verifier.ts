@@ -1,9 +1,11 @@
 import { UltraHonkBackend } from "@aztec/bb.js";
+import { Wallet, Contract, JsonRpcProvider } from "ethers";
+import { arrayify, hexZeroPad } from "@ethersproject/bytes";
 
 export async function verifyProof(
   proofHex: string,
   publicInputs: any,
-  circuitUrl: string
+  circuitUrl: string,
 ): Promise<boolean> {
   try {
     const metadata = await fetch(circuitUrl).then((res) => res.json());
@@ -22,6 +24,32 @@ export async function verifyProof(
     return result;
   } catch (err) {
     console.error("Verification failed:", err);
+    return false;
+  }
+}
+
+export async function verifyOnchain({
+  proof,
+  publicInputs,
+  verifierAddress,
+  provider
+}: {
+  proof: string;
+  publicInputs: string[];
+  verifierAddress: string;
+  provider: JsonRpcProvider;
+}): Promise<boolean> {
+  const abi = ["function verify(bytes calldata _proof, bytes32[] calldata _publicInputs) external view returns (bool)"];
+  const signer = Wallet.createRandom().connect(provider)
+  const contract = new Contract(verifierAddress, abi, signer);
+
+  const proofBytes = arrayify(proof);
+  const formattedInputs = publicInputs.map(x => hexZeroPad(x, 32));
+
+  try {
+    return await contract.verify(proofBytes, formattedInputs);
+  } catch (err) {
+    console.error("Onchain verification failed:", err);
     return false;
   }
 }

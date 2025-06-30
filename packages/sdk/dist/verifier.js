@@ -1,8 +1,10 @@
 import { UltraHonkBackend } from "@aztec/bb.js";
+import { Wallet, Contract } from "ethers";
+import { arrayify, hexZeroPad } from "@ethersproject/bytes";
 export async function verifyProof(proofHex, publicInputs, circuitUrl) {
     try {
         const metadata = await fetch(circuitUrl).then((res) => res.json());
-        const backend = new UltraHonkBackend(metadata.bytecode, { threads: 2 });
+        const backend = new UltraHonkBackend(metadata.bytecode, { threads: 4 });
         const proofBytes = hexToBytes(proofHex);
         const result = await backend.verifyProof({
             proof: proofBytes,
@@ -13,6 +15,20 @@ export async function verifyProof(proofHex, publicInputs, circuitUrl) {
     }
     catch (err) {
         console.error("Verification failed:", err);
+        return false;
+    }
+}
+export async function verifyOnchain({ proof, publicInputs, verifierAddress, provider }) {
+    const abi = ["function verify(bytes calldata _proof, bytes32[] calldata _publicInputs) external view returns (bool)"];
+    const signer = Wallet.createRandom().connect(provider);
+    const contract = new Contract(verifierAddress, abi, signer);
+    const proofBytes = arrayify(proof);
+    const formattedInputs = publicInputs.map(x => hexZeroPad(x, 32));
+    try {
+        return await contract.verify(proofBytes, formattedInputs);
+    }
+    catch (err) {
+        console.error("Onchain verification failed:", err);
         return false;
     }
 }

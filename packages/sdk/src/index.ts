@@ -1,6 +1,7 @@
-import { verifyProof } from "./verifier";
+import { verifyProof, verifyOnchain } from "./verifier";
 import { validateMetadata } from "./signer";
 import { CIRCUIT_URL, PROOF_PORTAL_URL, ALLOWED_ORIGIN, COINBASE_CONTRACT } from "./constants";
+import { JsonRpcProvider, ethers } from "ethers";
 
 export type ProofResult =
   | { success: true; proof: string; publicInputs: any }
@@ -45,10 +46,16 @@ export async function verifyZkKycProof({
   proof,
   publicInputs,
   meta,
+  mode = "offchain",
+  provider,
+  verifierAddress = "0xB3705B6d33Fe7b22e86130Fa12592B308a191483" 
 }: {
   proof: string;
   publicInputs: string[];
   meta: any;
+  mode?: "offchain" | "onchain";
+  provider?: JsonRpcProvider;
+  verifierAddress?: string;
 }): Promise<ProofResult> {
   try {
     // 1. validate metadata
@@ -74,8 +81,21 @@ export async function verifyZkKycProof({
     //   throw new Error("Coinbase public key Y mismatch");
     // }
 
-    // 4. verify ZK proof
-    const isValid = await verifyProof(proof, publicInputs, CIRCUIT_URL);
+    let isValid = false;
+    if (mode === "offchain") {
+      isValid = await verifyProof(proof, publicInputs, CIRCUIT_URL);
+    } else if (mode === "onchain") {
+      if (!provider) throw new Error("Onchain mode requires provider");
+      isValid = await verifyOnchain({
+        proof,
+        publicInputs,
+        verifierAddress,
+        provider
+      });
+    } else {
+      throw new Error(`Unknown mode: ${mode}`);
+    }
+
     if (!isValid) throw new Error("Invalid proof");
 
     return { success: true, proof, publicInputs };

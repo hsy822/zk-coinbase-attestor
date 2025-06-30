@@ -1,3 +1,4 @@
+import { JsonRpcProvider } from "ethers";
 export type ProofResult = {
     success: true;
     proof: string;
@@ -11,8 +12,11 @@ export declare function openZkKycPopup(): Promise<{
     publicInputs: string[];
     meta: any;
 }>;
-export declare function verifyZkKycProof({ proof, publicInputs, meta, }: {
+export declare function verifyZkKycProof({ proof, publicInputs, meta, mode, provider, verifierAddress }: {
     proof: string;
     publicInputs: string[];
     meta: any;
+    mode?: "offchain" | "onchain";
+    provider?: JsonRpcProvider;
+    verifierAddress?: string;
 }): Promise<ProofResult>;

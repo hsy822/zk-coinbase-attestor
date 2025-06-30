@@ -1,4 +1,4 @@
-import { verifyProof } from "./verifier";
+import { verifyProof, verifyOnchain } from "./verifier";
 import { validateMetadata } from "./signer";
 import { CIRCUIT_URL, PROOF_PORTAL_URL, ALLOWED_ORIGIN, COINBASE_CONTRACT } from "./constants";
 export async function openZkKycPopup() {
@@ -27,7 +27,7 @@ export async function openZkKycPopup() {
         window.addEventListener("message", handler);
     });
 }
-export async function verifyZkKycProof({ proof, publicInputs, meta, }) {
+export async function verifyZkKycProof({ proof, publicInputs, meta, mode = "offchain", provider, verifierAddress = "0xB3705B6d33Fe7b22e86130Fa12592B308a191483" }) {
     try {
         // 1. validate metadata
         validateMetadata(meta);
@@ -48,8 +48,23 @@ export async function verifyZkKycProof({ proof, publicInputs, meta, }) {
         // if (!arraysEqual(pubY, COINBASE_PUBKEY.y)) {
         //   throw new Error("Coinbase public key Y mismatch");
         // }
-        // 4. verify ZK proof
-        const isValid = await verifyProof(proof, publicInputs, CIRCUIT_URL);
+        let isValid = false;
+        if (mode === "offchain") {
+            isValid = await verifyProof(proof, publicInputs, CIRCUIT_URL);
+        }
+        else if (mode === "onchain") {
+            if (!provider)
+                throw new Error("Onchain mode requires provider");
+            isValid = await verifyOnchain({
+                proof,
+                publicInputs,
+                verifierAddress,
+                provider
+            });
+        }
+        else {
+            throw new Error(`Unknown mode: ${mode}`);
+        }
         if (!isValid)
             throw new Error("Invalid proof");
         return { success: true, proof, publicInputs };
