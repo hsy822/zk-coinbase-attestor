@@ -24,6 +24,7 @@ When a user completes KYC on Coinbase, Coinbase generates an attestation onchain
 * zk-Coinbase-Attestor retrieves this attestation and generates a Zero-Knowledge Proof that the user’s wallet was attested, without exposing the address.
 
 This design ensures compliance can be verified cryptographically, without linking user addresses publicly.
+
 ---
 
 ## Demo & Local Development
