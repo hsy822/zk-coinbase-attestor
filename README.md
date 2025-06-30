@@ -68,8 +68,8 @@ NEXT_PUBLIC_BASE_RPC_URL=https://base-mainnet.example.infura.io/v3/YOUR_KEY
 
 * Opens the Proof Portal using `window.open` via `openZkKycPopup`.
 * Receives the proof, public inputs, and meta (origin, nonce, timestamp) through `postMessage`.
+* Can choose to verify the proof **offchain in the browser**, or **onchain by submitting to a Noir verifier deployed on Base Mainnet**.
 * Enforces:
-
   * `origin` checks to ensure same-origin data integrity.
   * `nonce` tracking to prevent replay attacks.
   * `timestamp` checks so proofs are valid only within a short window (5 minutes).
