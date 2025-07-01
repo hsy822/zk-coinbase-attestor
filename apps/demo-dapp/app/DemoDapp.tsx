@@ -5,7 +5,7 @@ import Confetti from 'react-confetti';
 import { JsonRpcProvider } from 'ethers';
 
 export default function AirdropVerifierDApp() {
-  const [status, setStatus] = useState<'idle' | 'loading' | 'ready' | 'success' | 'error'>('idle');
+  const [status, setStatus] = useState<'idle' | 'fetchingProof' | 'loading' | 'ready' | 'success' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
   const [rawProof, setRawProof] = useState<any>(null);
   const [copied, setCopied] = useState(false);
@@ -14,7 +14,7 @@ export default function AirdropVerifierDApp() {
   const provider = new JsonRpcProvider(process.env.NEXT_PUBLIC_BASE_RPC_URL);
 
   const handleOpenProofPortal = async () => {
-    setStatus('loading');
+    setStatus('fetchingProof');
     setError(null);
     try {
       const proof = await openZkKycPopup();
@@ -133,6 +133,11 @@ export default function AirdropVerifierDApp() {
                   </a>
                 </p>
               </div>
+            )}
+            {status === 'fetchingProof' && (
+              <p className="text-xs text-gray-500">
+                📝 Waiting for your proof from the Proof Portal...
+              </p>
             )}
             {status === 'loading' && (
               <p className="text-xs text-gray-500">
