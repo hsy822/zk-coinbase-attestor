@@ -83,7 +83,7 @@ export default function AirdropVerifierDApp() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="underline hover:text-blue-700"
-                >BaseScan</a>
+                > BaseScan</a>
               </li>
             </ul>
           </div>
