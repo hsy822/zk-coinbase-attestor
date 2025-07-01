@@ -77,6 +77,14 @@ export default function AirdropVerifierDApp() {
               <li>Generate your proof securely via the Proof Portal</li>
               <li>All verification runs through a trusted Proof Portal</li>
               <li>Return here to verify offchain or onchain on Base</li>
+              <li>View onchain verifier contract on 
+                <a 
+                  href="https://basescan.org/address/0xB3705B6d33Fe7b22e86130Fa12592B308a191483#code"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline hover:text-blue-700"
+                >BaseScan</a>
+              </li>
             </ul>
           </div>
         </div>
@@ -122,16 +130,6 @@ export default function AirdropVerifierDApp() {
             {status === 'ready' && (
               <div className="flex flex-col items-center space-y-2 mt-6 text-center text-xs text-gray-500 leading-relaxed">
                 <p>⚠️ Each proof can be used only once for verification.</p>
-                <p>
-                  🔗 <a 
-                    href="https://basescan.org/address/0xB3705B6d33Fe7b22e86130Fa12592B308a191483#code"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline hover:text-blue-700"
-                  >
-                    View onchain verifier contract on BaseScan
-                  </a>
-                </p>
               </div>
             )}
             {status === 'fetchingProof' && (
