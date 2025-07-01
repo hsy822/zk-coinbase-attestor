@@ -130,6 +130,12 @@ export default function AirdropVerifierDApp() {
             {status === 'ready' && (
               <div className="flex flex-col items-center space-y-2 mt-6 text-center text-xs text-gray-500 leading-relaxed">
                 <p>⚠️ Each proof can be used only once for verification.</p>
+                <button
+                  onClick={handleCopy}
+                  className="inline-block w-full px-5 py-2 text-xs font-medium rounded-md border border-green-600 text-green-700 hover:bg-green-50 transition"
+                >
+                  {copied ? 'Copied!' : 'Copy proof JSON'}
+                </button>
               </div>
             )}
             {status === 'fetchingProof' && (
@@ -152,12 +158,6 @@ export default function AirdropVerifierDApp() {
                 <div className="bg-green-100 border border-green-300 text-green-800 text-sm rounded-md px-4 py-3 shadow-sm">
                   ✅ Proof verified! You can now join the airdrop pool.
                 </div>
-                <button
-                  onClick={handleCopy}
-                  className="inline-block w-full px-5 py-2 text-xs font-medium rounded-md border border-green-600 text-green-700 hover:bg-green-50 transition"
-                >
-                  {copied ? 'Copied!' : 'Copy proof JSON'}
-                </button>
               </div>
             )}
           </div>
