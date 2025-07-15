@@ -74,6 +74,8 @@ NEXT_PUBLIC_BASE_RPC_URL=https://base-mainnet.example.infura.io/v3/YOUR_KEY
   * `origin` checks to ensure same-origin data integrity.
   * `nonce` tracking to prevent replay attacks.
   * `timestamp` checks so proofs are valid only within a short window (5 minutes).
+* Verifier Contract on Base Mainnet
+  * **Address:** [`0xB3705B6d33Fe7b22e86130Fa12592B308a191483`](https://basescan.org/address/0xB3705B6d33Fe7b22e86130Fa12592B308a191483#code)
 
 ### Proof Portal (React + Noir + UltraHonk)
 
@@ -92,6 +94,7 @@ NEXT_PUBLIC_BASE_RPC_URL=https://base-mainnet.example.infura.io/v3/YOUR_KEY
 ### dApp
 
 * Calls SDK to request proof
+* Proofs can be verified on-chain or off-chain.
 * Receives only `true/false` result
 * Decides access or benefits accordingly
 
@@ -102,7 +105,12 @@ import { openZkKycPopup, verifyZkKycProof } from '@zk/coinbase-attestor';
 
 const raw = await openZkKycPopup('zk-coinbase-attestor');
 
-const result = await verifyZkKycProof(raw);
+const result = await verifyZkKycProof({
+  ...rawProof,
+  mode, // "offchain" or "onchain"
+  provider,
+  verifierAddress: '0xB3705B6d33Fe7b22e86130Fa12592B308a191483' // Verifier contract deployed on Base mainnet
+});
 
 if (result.success) {
   // Proof verified
